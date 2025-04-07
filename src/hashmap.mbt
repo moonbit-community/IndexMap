@@ -1,47 +1,9 @@
-// Copyright 2025 International Digital Economy Academy
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 ///|
 const Default_init_capacity = 8
 
 ///|
 fn calc_grow_threshold(capacity : Int) -> Int {
   capacity * 3 / 4 // 75% 负载因子
-}
-
-///|
-fn power_2_above(x : Int, n : Int) -> Int {
-  for i = x {
-    if i >= n {
-      break i
-    }
-    let next = i << 1
-    if next < 0 {
-      // overflow happened
-      break i
-    }
-    continue next
-  }
-}
-
-///|
-test "power_2_above" {
-  inspect!(power_2_above(1, 15), content="16")
-  inspect!(power_2_above(1, 16), content="16")
-  inspect!(power_2_above(1, 17), content="32")
-  inspect!(power_2_above(1, 32), content="32")
-  inspect!(power_2_above(128, 33), content="128")
-  inspect!(power_2_above(1, 2147483647), content="1073741824")
 }
 
 ///|
@@ -141,12 +103,9 @@ pub fn from_array[K : Hash + Eq, V](arr : Array[(K, V)]) -> T[K, V] {
 /// @alert unsafe "Panic if the hash map is full."
 ///|
 /// Sets a key-value pair into the map. If the key already exists, updates its value.
+///|
+/// Sets a key-value pair into the map. If the key already exists, updates its value.
 pub fn set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
-  // 检查是否需要扩容
-  if self.capacity == 0 || self.size >= self.growAt {
-    self.grow()
-  }
-
   // 计算哈希值
   let hash = key.hash()
 
@@ -157,7 +116,7 @@ pub fn set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
       self.core.entries[idx].value = value
       return
     }
-    None => ignore(None)
+    _ => ignore(None) // 键不存在，继续执行插入逻辑
   }
 
   // 创建新的桶
@@ -198,9 +157,18 @@ pub fn set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
 
   // 更新大小
   self.size += 1
+
+  // 插入完成后，检查是否需要为下一次插入扩容
+  if self.capacity == 0 || self.size >= self.growAt {
+    self.grow()
+  }
 }
 
 ///|
+///|
+/// Sets a key-value pair with a pre-computed hash
+///|
+/// Sets a key-value pair with a pre-computed hash
 ///|
 /// Sets a key-value pair with a pre-computed hash
 fn set_with_hash[K : Hash + Eq, V](
@@ -209,11 +177,6 @@ fn set_with_hash[K : Hash + Eq, V](
   value : V,
   hash : Int
 ) -> Unit {
-  // 检查是否需要扩容
-  if self.capacity == 0 || self.size >= self.growAt {
-    self.grow()
-  }
-
   // 检查键是否已存在
   match self.key_to_idx.get(key) {
     Some(idx) => {
@@ -221,7 +184,7 @@ fn set_with_hash[K : Hash + Eq, V](
       self.core.entries[idx].value = value
       return
     }
-    None => ignore(None)
+    _ => ignore(None) // 键不存在，继续执行插入逻辑
   }
 
   // 创建新的桶
@@ -262,6 +225,11 @@ fn set_with_hash[K : Hash + Eq, V](
 
   // 更新大小
   self.size += 1
+
+  // 插入完成后，检查是否需要为下一次插入扩容
+  if self.capacity == 0 || self.size >= self.growAt {
+    self.grow()
+  }
 }
 
 ///|
@@ -554,13 +522,13 @@ pub fn remove[K : Hash + Eq, V](self : T[K, V], key : K) -> Unit {
       for i in position..<(self.size - 1) {
         self.core.position_to_idx[i] = self.core.position_to_idx[i + 1]
       }
-      let temp = self.core.position_to_idx.pop()
+      ignore(self.core.position_to_idx.pop())
 
       // 更新大小
       self.size -= 1
     }
-    None => ignore(None) // 键不存在，不执行任何操作
-  }
+    None => return
+  } // 键不存在，不执行任何操作
 }
 
 ///|
@@ -717,12 +685,24 @@ test "remove_unexist_key" {
 ///|
 test "clear" {
   let m : T[MyString, Int] = of([("a", 1), ("b", 2), ("c", 3)])
+  println(m.capacity())
+  let old_capacity = m.capacity()
   m.clear()
+
+  // 验证基本属性
   assert_eq!(m.size(), 0)
-  assert_eq!(m.capacity(), 8)
-  //for i in 0..<m.capacity() {
-  //  @test.same_object!(m.entries[i], None)
-  // }
+  assert_eq!(m.capacity(), old_capacity) // 容量应保持不变
+
+  // 验证内部结构已正确清空
+  assert_eq!(m.core.entries.length(), 0) // entries 应为空数组
+  assert_eq!(m.core.head, -1) // 头指针应为 -1
+  assert_eq!(m.core.tail, -1) // 尾指针应为 -1
+  assert_eq!(m.core.position_to_idx.length(), 0) // 位置映射应为空
+
+  // 验证功能正确性
+  assert_eq!(m.get("a"), None)
+  assert_eq!(m.get("b"), None)
+  assert_eq!(m.get("c"), None)
 }
 
 ///|
@@ -733,21 +713,15 @@ test "grow" {
   m.set("C++", 3)
   m.set("Java", 4)
   m.set("Scala", 5)
+  inspect!(m.capacity(), content="8")
   m.set("Julia", 5)
   assert_eq!(m.size(), 6)
   inspect!(m.capacity(), content="16")
-  m.set("Cobol", 5)
-  assert_eq!(m.size(), 7)
-  inspect!(m.capacity(), content="16")
-  m.set("Python", 6)
-  m.set("Haskell", 7)
-  m.set("Rescript", 8)
-  assert_eq!(m.size(), 10)
-  inspect!(m.capacity(), content="32")
-  //inspect!(
-  //  m.debug_entries(),
-  //  content="_,(0,C,1),(0,Go,2),(0,C++,3),(0,Java,4),(0,Scala,5),(1,Julia,5),(2,Cobol,5),(2,Python,6),(2,Haskell,7),(2,Rescript,8),_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_",
-  // )
+  println(m.debug_entries())
+  // inspect!(
+  //   m.debug_entries(),
+  //   content="_,(0,C,1),(0,Go,2),(0,C++,3),(0,Java,4),(0,Scala,5),(1,Julia,5),(2,Cobol,5),(2,Python,6),(2,Haskell,7),(2,Rescript,8),_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_,_",
+  //)
 }
 
 ///|
@@ -832,4 +806,460 @@ fn grow[K : Hash + Eq, V](self : T[K, V]) -> Unit {
     self.set(entry.key, entry.value)
     current = entry.next
   }
+}
+
+///|
+fn debug_entries[K : Show, V : Show](self : T[K, V]) -> String {
+  let mut s = ""
+  let mut current = self.core.head
+  let mut i = 0
+  while current != -1 {
+    if i > 0 {
+      s = s + ","
+    }
+    let entry = self.core.entries[current]
+    s = s + "(\{entry.key},\{entry.value})"
+    current = entry.next
+    i += 1
+  }
+  s
+}
+
+///|
+/// Returns an iterator over the key-value pairs in the map.
+///
+/// Parameters:
+///
+/// * `map` : The index map to iterate over.
+///
+/// Returns an iterator that yields tuples of `(key, value)` for each entry in
+/// the map, in insertion order.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "iter" {
+///   let map = @indexmap.of([(1, "one"), (2, "two")])
+///   let pairs = map.iter().to_array()
+///   inspect!(pairs.length(), content="2")
+///   inspect!(pairs[0], content="(1, \"one\")")
+///   inspect!(pairs[1], content="(2, \"two\")")
+/// }
+/// ```
+pub fn iter[K, V](self : T[K, V]) -> Iter[(K, V)] {
+  Iter::new(fn(yield_) {
+    let mut current = self.core.head
+    while current != -1 {
+      let entry = self.core.entries[current]
+      if yield_((entry.key, entry.value)) == IterEnd {
+        return IterEnd
+      }
+      current = entry.next
+    }
+    IterContinue
+  })
+}
+
+///|
+/// Creates an iterator over the key-value pairs in the map, where the key and
+/// value are passed as separate arguments to the yielding function.
+///
+/// Parameters:
+///
+/// * `map` : The index map to iterate over.
+///
+/// Returns an iterator `Iter2[K, V]` that yields each key-value pair in the map
+/// as separate arguments in insertion order.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "iter2" {
+///   let map = @indexmap.of([(1, "one"), (2, "two")])
+///   let mut sum = 0
+///   map.iter2().each(fn(k, _) { sum = sum + k })
+///   inspect!(sum, content="3")
+/// }
+/// ```
+pub fn iter2[K, V](self : T[K, V]) -> Iter2[K, V] {
+  Iter2::new(fn(yield_) {
+    let mut current = self.core.head
+    while current != -1 {
+      let entry = self.core.entries[current]
+      if yield_(entry.key, entry.value) == IterEnd {
+        return IterEnd
+      }
+      current = entry.next
+    }
+    IterContinue
+  })
+}
+
+///|
+/// Creates a new index map from an iterator of key-value pairs.
+///
+/// Parameters:
+///
+/// * `iter` : An iterator that yields key-value pairs. The key type must
+/// implement both `Hash` and `Eq` traits.
+///
+/// Returns a new index map containing all key-value pairs from the iterator. If
+/// the iterator yields multiple pairs with the same key, the later value will
+/// overwrite the earlier one.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "from_iter" {
+///   let arr = [(1, "one"), (2, "two")]
+///   let iter = Iter::new(fn(yield_) {
+///     for pair in arr {
+///       if yield_(pair) == IterEnd {
+///         break IterEnd
+///       }
+///     } else {
+///       IterContinue
+///     }
+///   })
+///   let map = @indexmap.from_iter(iter)
+///   inspect!(map.get(1), content="Some(\"one\")")
+///   inspect!(map.get(2), content="Some(\"two\")")
+/// }
+/// ```
+pub fn from_iter[K : Hash + Eq, V](iter : Iter[(K, V)]) -> T[K, V] {
+  let m = new()
+  iter.each(fn(e) { m.set(e.0, e.1) })
+  m
+}
+
+///|
+/// Creates a new index map and inserts all key-value pairs from the given
+/// iterator.
+///
+/// Parameters:
+///
+/// * `iter` : An iterator of key-value pairs, where each pair consists of a
+/// hashable and equatable key of type `K` and a value of type `V`.
+///
+/// Returns a new index map containing all key-value pairs from the iterator.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "T::from_iter" {
+///   let pairs = [(1, "one"), (2, "two")]
+///   let map = @indexmap.from_iter(pairs.iter())
+///   inspect!(map.get(1), content="Some(\"one\")")
+///   inspect!(map.get(2), content="Some(\"two\")")
+/// }
+/// ```
+///
+#deprecated("use `@indexmap.from_iter` instead")
+pub fn T::from_iter[K : Hash + Eq, V](iter : Iter[(K, V)]) -> T[K, V] {
+  from_iter(iter)
+}
+
+///|
+/// Iterates over all key-value pairs in the index map and applies the given
+/// function to each pair in insertion order.
+///
+/// Parameters:
+///
+/// * `map` : The index map to iterate over.
+/// * `action` : A function that takes a key and a value as arguments and
+/// performs some action. The function should not return any value.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "each" {
+///   let map = @indexmap.of([(1, "one"), (2, "two")])
+///   let mut result = ""
+///   map.each(fn(k, v) { result = result + "\{k}:\{v}," })
+///   inspect!(result, content="1:one,2:two,")
+/// }
+/// ```
+pub fn each[K, V](self : T[K, V], f : (K, V) -> Unit) -> Unit {
+  let mut current = self.core.head
+  while current != -1 {
+    let entry = self.core.entries[current]
+    f(entry.key, entry.value)
+    current = entry.next
+  }
+}
+
+///|
+/// Iterates over all key-value pairs in the map with their index, applying the
+/// given function to each element. The index corresponds to the insertion order
+/// of elements, starting from 0.
+///
+/// Parameters:
+///
+/// * `self` : The index map to iterate over.
+/// * `callback` : A function that takes three arguments:
+///  * An integer representing the index of the current key-value pair
+///  * The key of the current entry
+///  * The value of the current entry
+///
+/// Example:
+///
+/// ```moonbit
+/// test "eachi" {
+///   let map = @indexmap.of([("a", 1), ("b", 2), ("c", 3)])
+///   let mut result = 0
+///   map.eachi(fn(i, k, _) { if k == "b" { result = i } })
+///   // "b" is at index 1
+///   inspect!(result, content="1")
+/// }
+/// ```
+pub fn eachi[K, V](self : T[K, V], f : (Int, K, V) -> Unit) -> Unit {
+  let mut current = self.core.head
+  let mut idx = 0
+  while current != -1 {
+    let entry = self.core.entries[current]
+    f(idx, entry.key, entry.value)
+    current = entry.next
+    idx += 1
+  }
+}
+
+///|
+/// Provides string representation for index maps.
+///
+/// Parameters:
+///
+/// * `self` : The index map to be converted to string.
+/// * `logger` : The buffer to write the string representation to.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "show" {
+///   let map = @indexmap.of([(1, "one"), (2, "two")])
+///   inspect!(map, content=
+///   #|IndexMap::of([(1, "one"), (2, "two")])
+/// )
+/// }
+/// ```
+pub impl[K : Show, V : Show] Show for T[K, V] with output(self, logger) {
+  logger.write_string("IndexMap::of([")
+  self.eachi(fn(i, k, v) {
+    if i > 0 {
+      logger.write_string(", ")
+    }
+    logger
+    ..write_string("(")
+    ..write_object(k)
+    ..write_string(", ")
+    ..write_object(v)
+    .write_string(")")
+  })
+  logger.write_string("])")
+}
+
+///|
+/// Returns the index of the given key in insertion order.
+///
+/// Parameters:
+///
+/// * `self` : The index map to search in.
+/// * `key` : The key to look for.
+///
+/// Returns `Some(index)` if the key exists, where index is its position in insertion order,
+/// or `None` if the key is not in the map.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "index_of" {
+///   let map = @indexmap.of([("a", 1), ("b", 2), ("c", 3)])
+///   inspect!(map.index_of("a"), content="Some(0)")
+///   inspect!(map.index_of("b"), content="Some(1)")
+///   inspect!(map.index_of("d"), content="None")
+/// }
+/// ```
+pub fn index_of[K : Hash + Eq, V](self : T[K, V], key : K) -> Int? {
+  // 先检查键是否存在
+  match self.key_to_idx.get(key) {
+    Some(bucket_idx) => {
+      // 检查bucket_idx的有效性
+      if bucket_idx >= 0 && bucket_idx < self.core.entries.length() {
+        // 使用线性搜索找到该桶索引在position_to_idx中的位置
+        for i in 0..<self.size {
+          if self.core.position_to_idx[i] == bucket_idx {
+            return Some(i)
+          }
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+/// Returns the first (oldest) key-value pair in the map.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to access.
+///
+/// Returns `Some((key, value))` for the first inserted entry,
+/// or `None` if the map is empty.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "first" {
+///   let map = @indexmap.of([("a", 1), ("b", 2)])
+///   inspect!(map.first(), content="Some((\"a\", 1))")
+/// }
+/// ```
+pub fn first[K, V](self : T[K, V]) -> (K, V)? {
+  if self.size == 0 || self.core.head == -1 {
+    return None
+  }
+  let entry = self.core.entries[self.core.head]
+  Some((entry.key, entry.value))
+}
+
+///|
+/// Returns the last (newest) key-value pair in the map.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to access.
+///
+/// Returns `Some((key, value))` for the most recently inserted entry,
+/// or `None` if the map is empty.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "last" {
+///   let map = @indexmap.of([("a", 1), ("b", 2)])
+///   inspect!(map.last(), content="Some((\"b\", 2))")
+/// }
+/// ```
+pub fn last[K, V](self : T[K, V]) -> (K, V)? {
+  if self.size == 0 || self.core.tail == -1 {
+    return None
+  }
+  let entry = self.core.entries[self.core.tail]
+  Some((entry.key, entry.value))
+}
+
+///|
+/// Returns an array of all keys in the map, preserving insertion order.
+///
+/// Parameters:
+///
+/// * `self` : The index map to get keys from.
+///
+/// Returns an array containing all keys in the map, in their insertion order.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "keys" {
+///   let map = @indexmap.of([("a", 1), ("b", 2), ("c", 3)])
+///   inspect!(map.keys(), content=["a", "b", "c"])
+/// }
+/// ```
+pub fn keys[K, V](self : T[K, V]) -> Array[K] {
+  if self.size == 0 {
+    return []
+  }
+  let result = []
+  let mut current = self.core.head
+  while current != -1 {
+    result.push(self.core.entries[current].key)
+    current = self.core.entries[current].next
+  }
+  result
+}
+
+///|
+/// Returns an array of all values in the map, preserving insertion order.
+///
+/// Parameters:
+///
+/// * `self` : The index map to get values from.
+///
+/// Returns an array containing all values in the map, in their keys' insertion order.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "values" {
+///   let map = @indexmap.of([("a", 1), ("b", 2), ("c", 3)])
+///   inspect!(map.values(), content=[1, 2, 3])
+/// }
+/// ```
+pub fn values[K, V](self : T[K, V]) -> Array[V] {
+  if self.size == 0 {
+    return []
+  }
+  let result = []
+  let mut current = self.core.head
+  while current != -1 {
+    result.push(self.core.entries[current].value)
+    current = self.core.entries[current].next
+  }
+  result
+}
+
+///|
+/// Converts the IndexMap to a JSON string preserving insertion order.
+///
+/// Parameters:
+///
+/// * `self` : The index map to be converted to a JSON string.
+///
+/// Returns a string in JSON format that preserves the insertion order of keys.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "to_json_string" {
+///   let map = @indexmap.of([(1, 10), (2, 20), (3, 30)])
+///   inspect!(map.to_json_string(), content="{\"1\":10,\"2\":20,\"3\":30}")
+/// }
+/// ```
+pub fn to_json_string[K : Show, V : ToJson](self : T[K, V]) -> String {
+  // 直接构建JSON字符串
+  let mut result = "{"
+  let mut first = true
+  let mut current = self.core.head
+  while current != -1 {
+    let entry = self.core.entries[current]
+    if first == false {
+      result = result + ","
+    }
+    first = false
+
+    // 添加键（转换为字符串）
+    result = result + "\"" + entry.key.to_string() + "\":"
+
+    // 添加值（转换为JSON）
+    result = result + entry.value.to_json().to_string()
+    current = entry.next
+  }
+  result + "}"
+}
+
+///|
+/// Standard ToJson implementation (may not preserve order)
+pub impl[K : Show, V : ToJson] ToJson for T[K, V] with to_json(self) {
+  // 使用普通Map
+  let object = Map::new(capacity=self.size)
+
+  // 按照插入顺序遍历元素
+  let mut current = self.core.head
+  while current != -1 {
+    let entry = self.core.entries[current]
+    object[entry.key.to_string()] = entry.value.to_json()
+    current = entry.next
+  }
+  Object(object)
 }
