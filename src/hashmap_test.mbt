@@ -104,6 +104,7 @@ test "is_empty" {
   m.set("a", 1)
   assert_eq!(m.is_empty(), false)
   m.remove("a")
+  println(m.size())
   assert_eq!(m.is_empty(), true)
 }
 
@@ -353,4 +354,34 @@ test "@IndexMap.from_array" {
 test "@IndexMap.from_array with int key" {
   let map = @IndexMap.from_array([(1, "one"), (2, "two"), (3, "three")])
   @json.inspect!(map, content={ "1": "one", "2": "two", "3": "three" })
+}
+
+///|
+test "shift" {
+  let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+  inspect!(map.shift(), content="Some((\"a\", 1))")
+  inspect!(map.size(), content="2")
+  inspect!(map.get("a"), content="None")
+}
+
+///|
+test "pop" {
+  let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+  inspect!(map.pop(), content="Some((\"c\", 3))")
+  inspect!(map.size(), content="2")
+  inspect!(map.get("c"), content="None")
+}
+
+///|
+test "get_first" {
+  let map = @IndexMap.of([("a", 1), ("b", 2)])
+  inspect!(map.get_first(), content="Some((\"a\", 1))")
+  inspect!(map.size(), content="2") // 元素没有被移除
+}
+
+///|
+test "get_last" {
+  let map = @IndexMap.of([("a", 1), ("b", 2)])
+  inspect!(map.get_last(), content="Some((\"b\", 2))")
+  inspect!(map.size(), content="2") // 元素没有被移除
 }

@@ -30,6 +30,7 @@ priv struct IndexMapCore[K, V] {
   mut head : Int // 链表头节点索引，-1表示空链表
   mut tail : Int // 链表尾节点索引，-1表示空链表
   mut position_to_idx : Array[Int] // 位置到桶索引的映射，支持O(1)的索引访问
+  mut idx_to_position : @hashmap.T[Int, Int] // 桶索引到位置的映射，使index_of操作为O(1)
 } derive(Show)
 
 /// A mutable indexed hash map.

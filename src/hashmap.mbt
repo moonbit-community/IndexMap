@@ -36,6 +36,7 @@ pub fn new[K, V](capacity~ : Int = Default_init_capacity) -> T[K, V] {
       head: -1,
       tail: -1,
       position_to_idx: [], // 初始化为空数组
+      idx_to_position: @hashmap.new(), // 初始化为空映射
     },
     size: 0,
     capacity,
@@ -103,20 +104,16 @@ pub fn from_array[K : Hash + Eq, V](arr : Array[(K, V)]) -> T[K, V] {
 /// @alert unsafe "Panic if the hash map is full."
 ///|
 /// Sets a key-value pair into the map. If the key already exists, updates its value.
-///|
-/// Sets a key-value pair into the map. If the key already exists, updates its value.
 pub fn set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
   // 计算哈希值
   let hash = key.hash()
 
   // 检查键是否已存在
-  match self.key_to_idx.get(key) {
-    Some(idx) => {
-      // 键已存在，更新值
-      self.core.entries[idx].value = value
-      return
-    }
-    _ => ignore(None) // 键不存在，继续执行插入逻辑
+  if self.key_to_idx.contains(key) {
+    // 键已存在，更新值
+    let idx = self.key_to_idx.get(key).unwrap()
+    self.core.entries[idx].value = value
+    return
   }
 
   // 创建新的桶
@@ -134,6 +131,9 @@ pub fn set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
 
   // 在映射中记录键到索引的映射
   self.key_to_idx.set(key, bucket_idx)
+
+  // 在添加新元素时更新idx_to_position
+  self.core.idx_to_position.set(bucket_idx, self.size)
 
   // 更新链表结构
   if self.core.tail != -1 {
@@ -164,12 +164,7 @@ pub fn set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
   }
 }
 
-///|
-///|
-/// Sets a key-value pair with a pre-computed hash
-///|
-/// Sets a key-value pair with a pre-computed hash
-///|
+///|///|
 /// Sets a key-value pair with a pre-computed hash
 fn set_with_hash[K : Hash + Eq, V](
   self : T[K, V],
@@ -178,13 +173,11 @@ fn set_with_hash[K : Hash + Eq, V](
   hash : Int
 ) -> Unit {
   // 检查键是否已存在
-  match self.key_to_idx.get(key) {
-    Some(idx) => {
-      // 键已存在，更新值
-      self.core.entries[idx].value = value
-      return
-    }
-    _ => ignore(None) // 键不存在，继续执行插入逻辑
+  if self.key_to_idx.contains(key) {
+    // 键已存在，更新值
+    let idx = self.key_to_idx.get(key).unwrap()
+    self.core.entries[idx].value = value
+    return
   }
 
   // 创建新的桶
@@ -469,33 +462,25 @@ pub fn contains[K : Hash + Eq, V](self : T[K, V], key : K) -> Bool {
 /// ```
 ///|
 /// Removes a key from the map.
+///|
+/// Removes a key from the map.
 pub fn remove[K : Hash + Eq, V](self : T[K, V], key : K) -> Unit {
   if self.size == 0 {
     return
   }
 
-  // 直接从映射中获取索引，O(1)操作
+  // 直接从映射中获取索引
   match self.key_to_idx.get(key) {
     Some(idx) => {
       // 获取被删除元素的链表信息
       let entry = self.core.entries[idx]
       let hash = entry.hash
 
-      // 找到元素在position_to_idx中的位置
-      let mut position = -1
-      for i in 0..<self.size {
-        if self.core.position_to_idx[i] == idx {
-          position = i
-          break
-        }
+      // 直接从索引到位置的映射中获取位置 - O(1)
+      let position = match self.core.idx_to_position.get(idx) {
+        Some(pos) => pos
+        None => return // 应该不会发生，防御性编程
       }
-      if position == -1 {
-        // 应该不会发生，防御性编程
-        return
-      }
-
-      // 从哈希表中移除
-      self.core.hash_to_idx.remove(hash)
 
       // 修复链表指针
       // 如果有前一个元素，更新它的next指针
@@ -514,23 +499,34 @@ pub fn remove[K : Hash + Eq, V](self : T[K, V], key : K) -> Unit {
         self.core.tail = entry.prev
       }
 
-      // 从映射中移除被删除的键
+      // 从哈希表中移除
+      self.core.hash_to_idx.remove(hash)
+
+      // 从键到索引的映射中移除
       self.key_to_idx.remove(key)
 
-      // 更新位置到索引的映射
-      // 移除当前位置的元素并将后面的元素前移
-      for i in position..<(self.size - 1) {
-        self.core.position_to_idx[i] = self.core.position_to_idx[i + 1]
+      // 如果要删除的不是最后一个元素，则交换位置
+      if position < self.size - 1 {
+        // 获取最后一个元素的索引
+        let last_idx = self.core.position_to_idx[self.size - 1]
+
+        // 将最后一个元素移动到被删除元素的位置
+        self.core.position_to_idx[position] = last_idx
+        self.core.idx_to_position.set(last_idx, position)
       }
+
+      // 从位置映射中移除最后一个位置
       ignore(self.core.position_to_idx.pop())
+
+      // 从索引到位置的映射中移除被删除元素
+      self.core.idx_to_position.remove(idx)
 
       // 更新大小
       self.size -= 1
     }
-    None => return
-  } // 键不存在，不执行任何操作
+    None => return // 键不存在，不执行任何操作
+  }
 }
-
 ///|
 
 ///|
@@ -755,6 +751,7 @@ pub fn clear[K, V](self : T[K, V]) -> Unit {
   self.core.head = -1
   self.core.tail = -1
   self.core.position_to_idx = []
+  self.core.idx_to_position = @hashmap.new() // 清空索引到位置的映射
   self.size = 0
   self.key_to_idx = @hashmap.new()
 }
@@ -796,6 +793,7 @@ fn grow[K : Hash + Eq, V](self : T[K, V]) -> Unit {
   self.core.head = -1
   self.core.tail = -1
   self.core.position_to_idx = []
+  self.core.idx_to_position = @hashmap.new()
   self.size = 0
   self.key_to_idx = @hashmap.new()
 
@@ -839,7 +837,7 @@ fn debug_entries[K : Show, V : Show](self : T[K, V]) -> String {
 ///
 /// ```moonbit
 /// test "iter" {
-///   let map = @indexmap.of([(1, "one"), (2, "two")])
+///   let map = @IndexMap.of([(1, "one"), (2, "two")])
 ///   let pairs = map.iter().to_array()
 ///   inspect!(pairs.length(), content="2")
 ///   inspect!(pairs[0], content="(1, \"one\")")
@@ -875,7 +873,7 @@ pub fn iter[K, V](self : T[K, V]) -> Iter[(K, V)] {
 ///
 /// ```moonbit
 /// test "iter2" {
-///   let map = @indexmap.of([(1, "one"), (2, "two")])
+///   let map = @IndexMap.of([(1, "one"), (2, "two")])
 ///   let mut sum = 0
 ///   map.iter2().each(fn(k, _) { sum = sum + k })
 ///   inspect!(sum, content="3")
@@ -921,7 +919,7 @@ pub fn iter2[K, V](self : T[K, V]) -> Iter2[K, V] {
 ///       IterContinue
 ///     }
 ///   })
-///   let map = @indexmap.from_iter(iter)
+///   let map = @IndexMap.from_iter(iter)
 ///   inspect!(map.get(1), content="Some(\"one\")")
 ///   inspect!(map.get(2), content="Some(\"two\")")
 /// }
@@ -948,13 +946,13 @@ pub fn from_iter[K : Hash + Eq, V](iter : Iter[(K, V)]) -> T[K, V] {
 /// ```moonbit
 /// test "T::from_iter" {
 ///   let pairs = [(1, "one"), (2, "two")]
-///   let map = @indexmap.from_iter(pairs.iter())
+///   let map = @IndexMap.from_iter(pairs.iter())
 ///   inspect!(map.get(1), content="Some(\"one\")")
 ///   inspect!(map.get(2), content="Some(\"two\")")
 /// }
 /// ```
 ///
-#deprecated("use `@indexmap.from_iter` instead")
+#deprecated("use `@IndexMap.from_iter` instead")
 pub fn T::from_iter[K : Hash + Eq, V](iter : Iter[(K, V)]) -> T[K, V] {
   from_iter(iter)
 }
@@ -973,7 +971,7 @@ pub fn T::from_iter[K : Hash + Eq, V](iter : Iter[(K, V)]) -> T[K, V] {
 ///
 /// ```moonbit
 /// test "each" {
-///   let map = @indexmap.of([(1, "one"), (2, "two")])
+///   let map = @IndexMap.of([(1, "one"), (2, "two")])
 ///   let mut result = ""
 ///   map.each(fn(k, v) { result = result + "\{k}:\{v}," })
 ///   inspect!(result, content="1:one,2:two,")
@@ -1005,7 +1003,7 @@ pub fn each[K, V](self : T[K, V], f : (K, V) -> Unit) -> Unit {
 ///
 /// ```moonbit
 /// test "eachi" {
-///   let map = @indexmap.of([("a", 1), ("b", 2), ("c", 3)])
+///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
 ///   let mut result = 0
 ///   map.eachi(fn(i, k, _) { if k == "b" { result = i } })
 ///   // "b" is at index 1
@@ -1035,7 +1033,7 @@ pub fn eachi[K, V](self : T[K, V], f : (Int, K, V) -> Unit) -> Unit {
 ///
 /// ```moonbit
 /// test "show" {
-///   let map = @indexmap.of([(1, "one"), (2, "two")])
+///   let map = @IndexMap.of([(1, "one"), (2, "two")])
 ///   inspect!(map, content=
 ///   #|IndexMap::of([(1, "one"), (2, "two")])
 /// )
@@ -1072,7 +1070,7 @@ pub impl[K : Show, V : Show] Show for T[K, V] with output(self, logger) {
 ///
 /// ```moonbit
 /// test "index_of" {
-///   let map = @indexmap.of([("a", 1), ("b", 2), ("c", 3)])
+///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
 ///   inspect!(map.index_of("a"), content="Some(0)")
 ///   inspect!(map.index_of("b"), content="Some(1)")
 ///   inspect!(map.index_of("d"), content="None")
@@ -1081,18 +1079,9 @@ pub impl[K : Show, V : Show] Show for T[K, V] with output(self, logger) {
 pub fn index_of[K : Hash + Eq, V](self : T[K, V], key : K) -> Int? {
   // 先检查键是否存在
   match self.key_to_idx.get(key) {
-    Some(bucket_idx) => {
-      // 检查bucket_idx的有效性
-      if bucket_idx >= 0 && bucket_idx < self.core.entries.length() {
-        // 使用线性搜索找到该桶索引在position_to_idx中的位置
-        for i in 0..<self.size {
-          if self.core.position_to_idx[i] == bucket_idx {
-            return Some(i)
-          }
-        }
-      }
-      None
-    }
+    Some(bucket_idx) =>
+      // 直接从桶索引到位置的映射获取位置索引 - O(1)
+      self.core.idx_to_position.get(bucket_idx)
     None => None
   }
 }
@@ -1111,7 +1100,7 @@ pub fn index_of[K : Hash + Eq, V](self : T[K, V], key : K) -> Int? {
 ///
 /// ```moonbit
 /// test "first" {
-///   let map = @indexmap.of([("a", 1), ("b", 2)])
+///   let map = @IndexMap.of([("a", 1), ("b", 2)])
 ///   inspect!(map.first(), content="Some((\"a\", 1))")
 /// }
 /// ```
@@ -1137,7 +1126,7 @@ pub fn first[K, V](self : T[K, V]) -> (K, V)? {
 ///
 /// ```moonbit
 /// test "last" {
-///   let map = @indexmap.of([("a", 1), ("b", 2)])
+///   let map = @IndexMap.of([("a", 1), ("b", 2)])
 ///   inspect!(map.last(), content="Some((\"b\", 2))")
 /// }
 /// ```
@@ -1162,7 +1151,7 @@ pub fn last[K, V](self : T[K, V]) -> (K, V)? {
 ///
 /// ```moonbit
 /// test "keys" {
-///   let map = @indexmap.of([("a", 1), ("b", 2), ("c", 3)])
+///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
 ///   inspect!(map.keys(), content=["a", "b", "c"])
 /// }
 /// ```
@@ -1192,7 +1181,7 @@ pub fn keys[K, V](self : T[K, V]) -> Array[K] {
 ///
 /// ```moonbit
 /// test "values" {
-///   let map = @indexmap.of([("a", 1), ("b", 2), ("c", 3)])
+///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
 ///   inspect!(map.values(), content=[1, 2, 3])
 /// }
 /// ```
@@ -1222,7 +1211,7 @@ pub fn values[K, V](self : T[K, V]) -> Array[V] {
 ///
 /// ```moonbit
 /// test "to_json_string" {
-///   let map = @indexmap.of([(1, 10), (2, 20), (3, 30)])
+///   let map = @IndexMap.of([(1, 10), (2, 20), (3, 30)])
 ///   inspect!(map.to_json_string(), content="{\"1\":10,\"2\":20,\"3\":30}")
 /// }
 /// ```
@@ -1262,4 +1251,190 @@ pub impl[K : Show, V : ToJson] ToJson for T[K, V] with to_json(self) {
     current = entry.next
   }
   Object(object)
+}
+
+///|
+/// Removes and returns the last (newest) inserted key-value pair from the map.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to modify.
+///
+/// Returns `Some((key, value))` for the last inserted entry that was removed,
+/// or `None` if the map is empty.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "pop" {
+///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+///   inspect!(map.pop(), content="Some((\"c\", 3))")
+///   inspect!(map.size(), content="2")
+///   inspect!(map.get("c"), content="None")
+/// }
+/// ```
+pub fn pop[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? {
+  if self.size == 0 || self.core.tail == -1 {
+    return None
+  }
+
+  // 获取尾部元素
+  let tail_idx = self.core.tail
+  let tail_entry = self.core.entries[tail_idx]
+  let key = tail_entry.key
+  let value = tail_entry.value
+
+  // 更新链表指针，移除尾节点
+  if tail_entry.prev != -1 {
+    self.core.entries[tail_entry.prev].next = -1
+    self.core.tail = tail_entry.prev
+  } else {
+    // 链表中只有一个元素时，清空链表
+    self.core.head = -1
+    self.core.tail = -1
+  }
+
+  // 从哈希表和键到索引的映射中移除
+  self.core.hash_to_idx.remove(tail_entry.hash)
+  self.key_to_idx.remove(key)
+
+  // 从位置映射中移除最后一个位置
+  ignore(self.core.position_to_idx.pop())
+
+  // 从索引到位置的映射中移除被删除的元素
+  self.core.idx_to_position.remove(tail_idx)
+
+  // 更新大小
+  self.size -= 1
+
+  // 返回被移除的元素
+  Some((key, value))
+}
+
+///|
+/// Removes and returns the first (oldest) inserted key-value pair from the map.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to modify.
+///
+/// Returns `Some((key, value))` for the first inserted entry that was removed,
+/// or `None` if the map is empty.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "shift" {
+///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+///   inspect!(map.shift(), content="Some((\"a\", 1))")
+///   inspect!(map.size(), content="2")
+///   inspect!(map.get("a"), content="None")
+/// }
+/// ```
+pub fn shift[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? {
+  if self.size == 0 || self.core.head == -1 {
+    return None
+  }
+
+  // 获取头部元素
+  let head_idx = self.core.head
+  let head_entry = self.core.entries[head_idx]
+  let key = head_entry.key
+  let value = head_entry.value
+
+  // 更新链表指针，移除头节点
+  if head_entry.next != -1 {
+    self.core.entries[head_entry.next].prev = -1
+    self.core.head = head_entry.next
+  } else {
+    // 链表中只有一个元素时，清空链表
+    self.core.head = -1
+    self.core.tail = -1
+  }
+
+  // 从哈希表和键到索引的映射中移除
+  self.core.hash_to_idx.remove(head_entry.hash)
+  self.key_to_idx.remove(key)
+
+  // 获取头部元素的位置（应该是0）
+  let position = match self.core.idx_to_position.get(head_idx) {
+    Some(pos) => pos
+    None => 0
+  }
+
+  // 使用交换策略：将最后一个元素移动到第一个位置
+  if self.size > 1 {
+    // 获取最后一个元素的索引
+    let last_idx = self.core.position_to_idx[self.size - 1]
+
+    // 将最后一个元素移动到第一个位置
+    self.core.position_to_idx[position] = last_idx
+    self.core.idx_to_position.set(last_idx, position)
+  }
+
+  // 从位置映射中移除最后一个位置
+  ignore(self.core.position_to_idx.pop())
+
+  // 从索引到位置的映射中移除被删除的元素
+  self.core.idx_to_position.remove(head_idx)
+
+  // 更新大小
+  self.size -= 1
+
+  // 返回被移除的元素
+  Some((key, value))
+}
+
+///|
+/// Returns the first (oldest) key-value pair in the map without removing it.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to access.
+///
+/// Returns `Some((key, value))` for the first inserted entry,
+/// or `None` if the map is empty.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "get_first" {
+///   let map = @IndexMap.of([("a", 1), ("b", 2)])
+///   inspect!(map.get_first(), content="Some((\"a\", 1))")
+///   inspect!(map.size(), content="2")  // 元素没有被移除
+/// }
+/// ```
+pub fn get_first[K, V](self : T[K, V]) -> (K, V)? {
+  if self.size == 0 || self.core.head == -1 {
+    return None
+  }
+  let head_entry = self.core.entries[self.core.head]
+  Some((head_entry.key, head_entry.value))
+}
+
+///|
+/// Returns the last (newest) key-value pair in the map without removing it.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to access.
+///
+/// Returns `Some((key, value))` for the most recently inserted entry,
+/// or `None` if the map is empty.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "get_last" {
+///   let map = @IndexMap.of([("a", 1), ("b", 2)])
+///   inspect!(map.get_last(), content="Some((\"b\", 2))")
+///   inspect!(map.size(), content="2")  // 元素没有被移除
+/// }
+/// ```
+pub fn get_last[K, V](self : T[K, V]) -> (K, V)? {
+  if self.size == 0 || self.core.tail == -1 {
+    return None
+  }
+  let tail_entry = self.core.entries[self.core.tail]
+  Some((tail_entry.key, tail_entry.value))
 }
