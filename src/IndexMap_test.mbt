@@ -385,3 +385,43 @@ test "get_last" {
   inspect!(map.get_last(), content="Some((\"b\", 2))")
   inspect!(map.size(), content="2") // 元素没有被移除
 }
+
+///|
+test "123" {
+  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+  let sorted_map = map.sorted()
+  assert_eq!(sorted_map.keys(), ["a", "b", "c"])
+  assert_eq!(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
+}
+
+///|
+test "index_of" {
+  let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+  inspect!(map.index_of("a"), content="Some(0)")
+  inspect!(map.index_of("b"), content="Some(1)")
+  inspect!(map.index_of("d"), content="None")
+}
+
+///|
+test "get_at" {
+  // 创建一个测试映射
+  let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3), ("d", 4)])
+
+  // 测试有效索引
+  inspect!(map.get_at(0), content="Some((\"a\", 1))")
+  inspect!(map.get_at(1), content="Some((\"b\", 2))")
+  inspect!(map.get_at(2), content="Some((\"c\", 3))")
+  inspect!(map.get_at(3), content="Some((\"d\", 4))")
+
+  // 测试无效索引
+  inspect!(map.get_at(-1), content="None")
+  inspect!(map.get_at(4), content="None")
+
+  // 测试空映射
+  let empty_map : @IndexMap.T[String, Int] = @IndexMap.new()
+  inspect!(empty_map.get_at(0), content="None")
+
+  // 测试修改元素后的索引访问
+  map.set("b", 20)
+  inspect!(map.get_at(1), content="Some((\"b\", 20))")
+}

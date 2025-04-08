@@ -462,8 +462,6 @@ pub fn contains[K : Hash + Eq, V](self : T[K, V], key : K) -> Bool {
 /// ```
 ///|
 /// Removes a key from the map.
-///|
-/// Removes a key from the map.
 pub fn remove[K : Hash + Eq, V](self : T[K, V], key : K) -> Unit {
   if self.size == 0 {
     return
@@ -476,7 +474,7 @@ pub fn remove[K : Hash + Eq, V](self : T[K, V], key : K) -> Unit {
       let entry = self.core.entries[idx]
       let hash = entry.hash
 
-      // 直接从索引到位置的映射中获取位置 - O(1)
+      // 获取被删除元素的位置索引
       let position = match self.core.idx_to_position.get(idx) {
         Some(pos) => pos
         None => return // 应该不会发生，防御性编程
@@ -505,13 +503,15 @@ pub fn remove[K : Hash + Eq, V](self : T[K, V], key : K) -> Unit {
       // 从键到索引的映射中移除
       self.key_to_idx.remove(key)
 
-      // 如果要删除的不是最后一个元素，则交换位置
+      // 如果要删除的不是最后一个元素，则需要移动最后一个元素并更新位置映射
       if position < self.size - 1 {
         // 获取最后一个元素的索引
         let last_idx = self.core.position_to_idx[self.size - 1]
 
         // 将最后一个元素移动到被删除元素的位置
         self.core.position_to_idx[position] = last_idx
+
+        // 更新索引到位置的映射
         self.core.idx_to_position.set(last_idx, position)
       }
 
@@ -1437,4 +1437,419 @@ pub fn get_last[K, V](self : T[K, V]) -> (K, V)? {
   }
   let tail_entry = self.core.entries[self.core.tail]
   Some((tail_entry.key, tail_entry.value))
+}
+
+///|
+/// Sorts the map entries based on the provided comparison function.
+/// 
+/// Parameters:
+/// 
+/// * `self` : The index map to sort.
+/// * `compare` : A function that takes two key-value pairs and returns an integer:
+///   * negative if the first pair should come before the second
+///   * zero if they are equivalent for sorting purposes
+///   * positive if the first pair should come after the second
+///
+/// Example:
+///
+/// ```moonbit
+/// test "sort_by" {
+///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+///   // Sort by key alphabetically
+///  map.sort_by(fn(k1, v1, k2, v2) { k1 <=> k2 })
+///   let keys = map.keys()
+///   inspect!(keys, content=["a", "b", "c"])
+/// }
+/// ```
+pub fn sort_by[K, V](self : T[K, V], compare : (K, V, K, V) -> Int) -> Unit {
+  if self.size <= 1 {
+    return // 不需要排序
+  }
+
+  // 1. 收集所有键值对
+  let entries = []
+  let mut current = self.core.head
+  while current != -1 {
+    let entry = self.core.entries[current]
+    entries.push((current, entry.key, entry.value))
+    current = entry.next
+  }
+
+  // 2. 按照比较函数排序
+  entries.sort_by(fn(e1, e2) { compare(e1.1, e1.2, e2.1, e2.2) })
+
+  // 3. 重建链表和位置映射
+  self.core.position_to_idx = []
+  self.core.idx_to_position = @hashmap.new()
+
+  // 重建头尾指针
+  self.core.head = entries[0].0
+  self.core.tail = entries[entries.length() - 1].0
+
+  // 设置第一个元素的前驱为-1
+  self.core.entries[self.core.head].prev = -1
+
+  // 更新链表指针和位置映射
+  for i in 0..<entries.length() {
+    let (idx, _, _) = entries[i]
+
+    // 更新位置映射
+    self.core.position_to_idx.push(idx)
+    self.core.idx_to_position.set(idx, i)
+
+    // 更新链表指针
+    if i < entries.length() - 1 {
+      // 不是最后一个元素，设置next指针
+      let next_idx = entries[i + 1].0
+      self.core.entries[idx].next = next_idx
+      self.core.entries[next_idx].prev = idx
+    } else {
+      // 最后一个元素，next指针为-1
+      self.core.entries[idx].next = -1
+    }
+  }
+}
+
+///|
+/// Sorts the map entries by keys using the provided comparison function.
+/// 
+/// Parameters:
+/// 
+/// * `self` : The index map to sort.
+/// * `compare` : A function that takes two keys and returns an integer:
+///   * negative if the first key should come before the second
+///   * zero if they are equivalent for sorting purposes
+///   * positive if the first key should come after the second
+///
+/// Example:
+///
+/// ```moonbit
+/// test "sort_by_key" {
+///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+///   // Sort by key alphabetically
+///   map.sort_by_key(fn(k1, k2) { k1 <=> k2 })
+///   let keys = map.keys()
+///   inspect!(keys, content=["a", "b", "c"])
+/// }
+/// ```
+pub fn sort_by_key[K, V](self : T[K, V], compare : (K, K) -> Int) -> Unit {
+  self.sort_by(fn(k1, _, k2, _) { compare(k1, k2) })
+}
+
+///|
+/// Sorts the map entries by values using the provided comparison function.
+/// 
+/// Parameters:
+/// 
+/// * `self` : The index map to sort.
+/// * `compare` : A function that takes two values and returns an integer:
+///   * negative if the first value should come before the second
+///   * zero if they are equivalent for sorting purposes
+///   * positive if the first value should come after the second
+///
+/// Example:
+///
+/// ```moonbit
+/// test "sort_by_value" {
+///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+///   // Sort by value in descending order
+///   map.sort_by_value(fn(v1, v2) { v2 <=> v1 })
+///   let values = map.values()
+///   inspect!(values, content=[3, 2, 1])
+/// }
+/// ```
+pub fn sort_by_value[K, V](self : T[K, V], compare : (V, V) -> Int) -> Unit {
+  self.sort_by(fn(_, v1, _, v2) { compare(v1, v2) })
+}
+
+///|
+/// Sorts the map entries by keys in ascending order. The key type must 
+/// implement the `Compare` trait.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to sort.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "sort" {
+///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+///   map.sort()
+///   let keys = map.keys()
+///   inspect!(keys, content=["a", "b", "c"])
+/// }
+/// ```
+pub fn sort[K : Compare, V](self : T[K, V]) -> Unit {
+  self.sort_by_key(fn(k1, k2) {
+    if k1 < k2 {
+      -1
+    } else if k1 > k2 {
+      1
+    } else {
+      0
+    }
+  })
+}
+
+///|
+/// Reverses the order of entries in the map.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to reverse.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "reverse" {
+///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+///   map.reverse()
+///   let keys = map.keys()
+///   inspect!(keys, content=["c", "b", "a"])
+/// }
+/// ```
+pub fn reverse[K, V](self : T[K, V]) -> Unit {
+  if self.size <= 1 {
+    return // 不需要反转
+  }
+
+  // 收集所有桶索引
+  let indices = []
+  let mut current = self.core.head
+  while current != -1 {
+    indices.push(current)
+    current = self.core.entries[current].next
+  }
+
+  // 反转链表指针
+  self.core.position_to_idx = []
+  let new_head = self.core.tail
+  let new_tail = self.core.head
+
+  // 交换头尾指针
+  self.core.head = new_head
+  self.core.tail = new_tail
+
+  // 反转每个节点的前驱后继
+  for idx in indices {
+    let entry = self.core.entries[idx]
+    self.core.entries[idx].next = entry.prev
+    self.core.entries[idx].prev = entry.next
+  }
+
+  // 更新位置映射
+  for i in 0..<indices.length() {
+    let idx = indices[indices.length() - 1 - i]
+    self.core.position_to_idx.push(idx)
+    self.core.idx_to_position.set(idx, i)
+  }
+}
+
+///|
+/// Returns a new map with entries sorted according to the provided comparison function.
+/// The original map is not modified.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to sort.
+/// * `compare` : A function that takes two key-value pairs and returns an integer:
+///   * negative if the first pair should come before the second
+///   * zero if they are equivalent for sorting purposes
+///   * positive if the first pair should come after the second
+///
+/// Example:
+///
+/// ```moonbit
+/// test "sorted_by" {
+///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+///   let sorted_map = map.sorted_by(fn(k1, v1, k2, v2) { k1 <=> k2 })
+///   inspect!(sorted_map.keys(), content=["a", "b", "c"])
+///   inspect!(map.keys(), content=["c", "a", "b"]) // 原始映射保持不变
+/// }
+/// ```
+pub fn sorted_by[K : Hash + Eq, V](
+  self : T[K, V],
+  compare : (K, V, K, V) -> Int
+) -> T[K, V] {
+  // 创建新映射
+  let result = new(capacity=self.size)
+
+  // 收集所有键值对
+  let pairs = []
+  let mut current = self.core.head
+  while current != -1 {
+    let entry = self.core.entries[current]
+    pairs.push((entry.key, entry.value))
+    current = entry.next
+  }
+
+  // 排序键值对
+  pairs.sort_by(fn(a, b) { compare(a.0, a.1, b.0, b.1) })
+
+  // 填充新映射
+  for pair in pairs {
+    result.set(pair.0, pair.1)
+  }
+  result
+}
+
+///|
+/// Returns a new map with entries sorted by keys using the provided comparison function.
+/// The original map is not modified.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to sort.
+/// * `compare` : A function that takes two keys and returns an integer:
+///   * negative if the first key should come before the second
+///   * zero if they are equivalent for sorting purposes
+///   * positive if the first key should come after the second
+///
+/// Example:
+///
+/// ```moonbit
+/// test "sorted_by_key" {
+///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+///   let sorted_map = map.sorted_by_key(fn(k1, k2) { k1 <=> k2 })
+///   inspect!(sorted_map.keys(), content=["a", "b", "c"])
+///   inspect!(map.keys(), content=["c", "a", "b"]) // 原始映射保持不变
+/// }
+/// ```
+pub fn sorted_by_key[K : Hash + Eq, V](
+  self : T[K, V],
+  compare : (K, K) -> Int
+) -> T[K, V] {
+  self.sorted_by(fn(k1, v1, k2, v2) { compare(k1, k2) })
+}
+
+///|
+/// Returns a new map with entries sorted by values using the provided comparison function.
+/// The original map is not modified.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to sort.
+/// * `compare` : A function that takes two values and returns an integer:
+///   * negative if the first value should come before the second
+///   * zero if they are equivalent for sorting purposes
+///   * positive if the first value should come after the second
+///
+/// Example:
+///
+/// ```moonbit
+/// test "sorted_by_value" {
+///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+///   let sorted_map = map.sorted_by_value(fn(v1, v2) { v1 <=> v2 })
+///   inspect!(sorted_map.values(), content=[1, 2, 3])
+///   inspect!(map.values(), content=[3, 1, 2]) // 原始映射保持不变
+/// }
+/// ```
+pub fn sorted_by_value[K : Hash + Eq, V](
+  self : T[K, V],
+  compare : (V, V) -> Int
+) -> T[K, V] {
+  self.sorted_by(fn(k1, v1, k2, v2) { compare(v1, v2) })
+}
+
+///|
+/// Returns a new map with entries sorted in natural order by keys.
+/// The original map is not modified.
+/// The key type must implement the `Compare` trait.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to sort.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "sorted" {
+///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+///   let sorted_map = map.sorted()
+///   inspect!(sorted_map.keys(), content=["a", "b", "c"])
+///   inspect!(map.keys(), content=["c", "a", "b"]) // 原始映射保持不变
+/// }
+/// ```
+pub fn sorted[K : Hash + Eq + Compare, V](self : T[K, V]) -> T[K, V] {
+  self.sorted_by_key(fn(k1, k2) {
+    if k1 < k2 {
+      -1
+    } else if k1 > k2 {
+      1
+    } else {
+      0
+    }
+  })
+}
+
+///|
+/// Returns a new map with entries sorted by values in natural order.
+/// The original map is not modified.
+/// The value type must implement the `Compare` trait.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to sort.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "sorted_by_values" {
+///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+///   let sorted_map = map.sorted_by_values()
+///   inspect!(sorted_map.values(), content=[1, 2, 3])
+/// }
+/// ```
+pub fn sorted_by_values[K : Hash + Eq, V : Compare](self : T[K, V]) -> T[K, V] {
+  self.sorted_by_value(fn(v1, v2) {
+    if v1 < v2 {
+      -1
+    } else if v1 > v2 {
+      1
+    } else {
+      0
+    }
+  })
+}
+
+///|
+/// Returns a new map with entries in reverse order from the original map.
+/// The original map is not modified.
+///
+/// Parameters:
+/// 
+/// * `self` : The index map to reverse.
+///
+/// Example:
+///
+/// ```moonbit
+/// test "reversed" {
+///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+///   let rev_map = map.reversed()
+///   inspect!(rev_map.keys(), content=["c", "b", "a"])
+///   inspect!(map.keys(), content=["a", "b", "c"]) // 原始映射保持不变
+/// }
+/// ```
+pub fn reversed[K : Hash + Eq, V](self : T[K, V]) -> T[K, V] {
+  // 创建新映射
+  let result = new(capacity=self.size)
+
+  // 收集所有键值对，按反向顺序
+  let pairs = []
+  let mut current = self.core.head
+  while current != -1 {
+    let entry = self.core.entries[current]
+    pairs.push((entry.key, entry.value))
+    current = entry.next
+  }
+
+  // 反向填充新映射
+  let mut i = pairs.length() - 1
+  while i >= 0 {
+    let pair = pairs[i]
+    result.set(pair.0, pair.1)
+    i -= 1
+  }
+  result
 }

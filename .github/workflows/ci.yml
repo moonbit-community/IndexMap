@@ -44,4 +44,4 @@ jobs:
             --service-pull-request "${{ github.event.pull_request.number }}" \
             --send-to codecov
         env:
-          CODECOV_TOKEN: e5b5ac9c-5092-4685-8eb4-f6df4c874a9a
+          CODECOV_TOKEN: 78d973cb-7873-4174-af10-f7a4e1e6a53b

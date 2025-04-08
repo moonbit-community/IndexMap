@@ -47,6 +47,14 @@ fn size[K, V](T[K, V]) -> Int
 
 fn to_array[K, V](T[K, V]) -> Array[(K, V)]
 
+fn shift[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? 
+
+fn pop[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? 
+
+fn get_first[K, V](self : T[K, V]) -> (K, V)? 
+
+fn get_last[K, V](self : T[K, V]) -> (K, V)?
+
 // Types and methods
 type T[K, V]
 impl T {
@@ -75,6 +83,10 @@ impl T {
   set[K : Hash + Eq, V](Self[K, V], K, V) -> Unit
   size[K, V](Self[K, V]) -> Int
   to_array[K, V](Self[K, V]) -> Array[(K, V)]
+  shift[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? 
+  pop[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? 
+  get_first[K, V](self : T[K, V]) -> (K, V)? 
+  get_last[K, V](self : T[K, V]) -> (K, V)?
 }
 impl[K : Show, V : Show] Show for T[K, V]
 impl[K : Show, V : ToJson] ToJson for T[K, V]
