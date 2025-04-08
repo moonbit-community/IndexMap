@@ -425,3 +425,107 @@ test "get_at" {
   map.set("b", 20)
   inspect!(map.get_at(1), content="Some((\"b\", 20))")
 }
+
+///|
+test "reversed" {
+  let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+  let rev_map = map.reversed()
+  println(rev_map.keys())
+  assert_eq!(rev_map.keys(), ["c", "b", "a"])
+  assert_eq!(map.keys(), ["a", "b", "c"]) // 原始映射保持不变
+}
+
+///|
+test "sorted_by_values" {
+  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+  let sorted_map = map.sorted_by_values()
+  assert_eq!(sorted_map.values(), [1, 2, 3])
+}
+
+///|
+test "sorted" {
+  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+  let sorted_map = map.sorted()
+  assert_eq!(sorted_map.keys(), ["a", "b", "c"])
+  assert_eq!(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
+}
+
+///|
+test "sorted_by_value" {
+  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+  let sorted_map = map.sorted_by_value(fn(v1, v2) { v1 - v2 })
+  assert_eq!(sorted_map.values(), [1, 2, 3])
+  assert_eq!(map.values(), [3, 1, 2]) // 原始映射保持不变
+}
+
+///|
+test "sorted_by_key" {
+  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+  let sorted_map = map.sorted_by_key(fn(k1, k2) { k1.compare(k2) })
+  assert_eq!(sorted_map.keys(), ["a", "b", "c"])
+  assert_eq!(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
+}
+
+///|
+test "sorted_by" {
+  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+  let sorted_map = map.sorted_by(fn(k1, v1, k2, v2) { k1.compare(k2) })
+  assert_eq!(sorted_map.keys(), ["a", "b", "c"])
+  assert_eq!(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
+}
+
+///|
+test "reverse" {
+  let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+  map.reverse()
+  let keys = map.keys()
+  assert_eq!(keys, ["c", "b", "a"])
+}
+
+///|
+test "sort" {
+  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+  map.sort()
+  let keys = map.keys()
+  assert_eq!(keys, ["a", "b", "c"])
+}
+
+///|
+test "sort_by_value" {
+  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+  // 按值降序排序
+  map.sort_by_value(fn(v1, v2) { v2 - v1 })
+  let values = map.values()
+  assert_eq!(values, [3, 2, 1])
+}
+
+///|
+test "sort_by_key" {
+  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+  // 按键字母顺序排序
+  map.sort_by_key(fn(k1, k2) { k1.compare(k2) })
+  let keys = map.keys()
+  assert_eq!(keys, ["a", "b", "c"])
+}
+
+///|
+test "sort_by" {
+  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
+  // 按键字母顺序排序
+  map.sort_by(fn(k1, v1, k2, v2) { k1.compare(k2) })
+  let keys = map.keys()
+  assert_eq!(keys, ["a", "b", "c"])
+}
+
+///|
+test "IndexSet arbitrary" {
+  let samples : Array[@IndexMap.T[Int, Int]] = @quickcheck.samples(20)
+  inspect!(
+    samples[5:10],
+    content="[IndexMap::of([(0, -1), (-2, -2)]), IndexMap::of([(0, -2), (1, 2)]), IndexMap::of([(0, 0)]), IndexMap::of([(0, 0)]), IndexMap::of([(0, -1), (2, 0), (4, 1), (-2, -5)])]",
+  )
+  inspect!(
+    samples[11:15],
+    content="[IndexMap::of([(0, 0)]), IndexMap::of([(0, -2), (-1, 2)]), IndexMap::of([(0, 2), (-1, -2), (-3, 2), (1, -2), (-4, 1), (6, 1), (3, 2)]), IndexMap::of([(0, 0)])]",
+  )
+}

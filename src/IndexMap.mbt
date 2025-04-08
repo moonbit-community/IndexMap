@@ -1440,27 +1440,6 @@ pub fn get_last[K, V](self : T[K, V]) -> (K, V)? {
 }
 
 ///|
-/// Sorts the map entries based on the provided comparison function.
-/// 
-/// Parameters:
-/// 
-/// * `self` : The index map to sort.
-/// * `compare` : A function that takes two key-value pairs and returns an integer:
-///   * negative if the first pair should come before the second
-///   * zero if they are equivalent for sorting purposes
-///   * positive if the first pair should come after the second
-///
-/// Example:
-///
-/// ```moonbit
-/// test "sort_by" {
-///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-///   // Sort by key alphabetically
-///  map.sort_by(fn(k1, v1, k2, v2) { k1 <=> k2 })
-///   let keys = map.keys()
-///   inspect!(keys, content=["a", "b", "c"])
-/// }
-/// ```
 pub fn sort_by[K, V](self : T[K, V], compare : (K, V, K, V) -> Int) -> Unit {
   if self.size <= 1 {
     return // 不需要排序
@@ -1511,75 +1490,16 @@ pub fn sort_by[K, V](self : T[K, V], compare : (K, V, K, V) -> Int) -> Unit {
 }
 
 ///|
-/// Sorts the map entries by keys using the provided comparison function.
-/// 
-/// Parameters:
-/// 
-/// * `self` : The index map to sort.
-/// * `compare` : A function that takes two keys and returns an integer:
-///   * negative if the first key should come before the second
-///   * zero if they are equivalent for sorting purposes
-///   * positive if the first key should come after the second
-///
-/// Example:
-///
-/// ```moonbit
-/// test "sort_by_key" {
-///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-///   // Sort by key alphabetically
-///   map.sort_by_key(fn(k1, k2) { k1 <=> k2 })
-///   let keys = map.keys()
-///   inspect!(keys, content=["a", "b", "c"])
-/// }
-/// ```
 pub fn sort_by_key[K, V](self : T[K, V], compare : (K, K) -> Int) -> Unit {
   self.sort_by(fn(k1, _, k2, _) { compare(k1, k2) })
 }
 
 ///|
-/// Sorts the map entries by values using the provided comparison function.
-/// 
-/// Parameters:
-/// 
-/// * `self` : The index map to sort.
-/// * `compare` : A function that takes two values and returns an integer:
-///   * negative if the first value should come before the second
-///   * zero if they are equivalent for sorting purposes
-///   * positive if the first value should come after the second
-///
-/// Example:
-///
-/// ```moonbit
-/// test "sort_by_value" {
-///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-///   // Sort by value in descending order
-///   map.sort_by_value(fn(v1, v2) { v2 <=> v1 })
-///   let values = map.values()
-///   inspect!(values, content=[3, 2, 1])
-/// }
-/// ```
 pub fn sort_by_value[K, V](self : T[K, V], compare : (V, V) -> Int) -> Unit {
   self.sort_by(fn(_, v1, _, v2) { compare(v1, v2) })
 }
 
 ///|
-/// Sorts the map entries by keys in ascending order. The key type must 
-/// implement the `Compare` trait.
-///
-/// Parameters:
-/// 
-/// * `self` : The index map to sort.
-///
-/// Example:
-///
-/// ```moonbit
-/// test "sort" {
-///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-///   map.sort()
-///   let keys = map.keys()
-///   inspect!(keys, content=["a", "b", "c"])
-/// }
-/// ```
 pub fn sort[K : Compare, V](self : T[K, V]) -> Unit {
   self.sort_by_key(fn(k1, k2) {
     if k1 < k2 {
@@ -1593,22 +1513,6 @@ pub fn sort[K : Compare, V](self : T[K, V]) -> Unit {
 }
 
 ///|
-/// Reverses the order of entries in the map.
-///
-/// Parameters:
-/// 
-/// * `self` : The index map to reverse.
-///
-/// Example:
-///
-/// ```moonbit
-/// test "reverse" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-///   map.reverse()
-///   let keys = map.keys()
-///   inspect!(keys, content=["c", "b", "a"])
-/// }
-/// ```
 pub fn reverse[K, V](self : T[K, V]) -> Unit {
   if self.size <= 1 {
     return // 不需要反转
@@ -1647,27 +1551,6 @@ pub fn reverse[K, V](self : T[K, V]) -> Unit {
 }
 
 ///|
-/// Returns a new map with entries sorted according to the provided comparison function.
-/// The original map is not modified.
-///
-/// Parameters:
-/// 
-/// * `self` : The index map to sort.
-/// * `compare` : A function that takes two key-value pairs and returns an integer:
-///   * negative if the first pair should come before the second
-///   * zero if they are equivalent for sorting purposes
-///   * positive if the first pair should come after the second
-///
-/// Example:
-///
-/// ```moonbit
-/// test "sorted_by" {
-///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-///   let sorted_map = map.sorted_by(fn(k1, v1, k2, v2) { k1 <=> k2 })
-///   inspect!(sorted_map.keys(), content=["a", "b", "c"])
-///   inspect!(map.keys(), content=["c", "a", "b"]) // 原始映射保持不变
-/// }
-/// ```
 pub fn sorted_by[K : Hash + Eq, V](
   self : T[K, V],
   compare : (K, V, K, V) -> Int
@@ -1695,27 +1578,6 @@ pub fn sorted_by[K : Hash + Eq, V](
 }
 
 ///|
-/// Returns a new map with entries sorted by keys using the provided comparison function.
-/// The original map is not modified.
-///
-/// Parameters:
-/// 
-/// * `self` : The index map to sort.
-/// * `compare` : A function that takes two keys and returns an integer:
-///   * negative if the first key should come before the second
-///   * zero if they are equivalent for sorting purposes
-///   * positive if the first key should come after the second
-///
-/// Example:
-///
-/// ```moonbit
-/// test "sorted_by_key" {
-///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-///   let sorted_map = map.sorted_by_key(fn(k1, k2) { k1 <=> k2 })
-///   inspect!(sorted_map.keys(), content=["a", "b", "c"])
-///   inspect!(map.keys(), content=["c", "a", "b"]) // 原始映射保持不变
-/// }
-/// ```
 pub fn sorted_by_key[K : Hash + Eq, V](
   self : T[K, V],
   compare : (K, K) -> Int
@@ -1724,27 +1586,6 @@ pub fn sorted_by_key[K : Hash + Eq, V](
 }
 
 ///|
-/// Returns a new map with entries sorted by values using the provided comparison function.
-/// The original map is not modified.
-///
-/// Parameters:
-/// 
-/// * `self` : The index map to sort.
-/// * `compare` : A function that takes two values and returns an integer:
-///   * negative if the first value should come before the second
-///   * zero if they are equivalent for sorting purposes
-///   * positive if the first value should come after the second
-///
-/// Example:
-///
-/// ```moonbit
-/// test "sorted_by_value" {
-///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-///   let sorted_map = map.sorted_by_value(fn(v1, v2) { v1 <=> v2 })
-///   inspect!(sorted_map.values(), content=[1, 2, 3])
-///   inspect!(map.values(), content=[3, 1, 2]) // 原始映射保持不变
-/// }
-/// ```
 pub fn sorted_by_value[K : Hash + Eq, V](
   self : T[K, V],
   compare : (V, V) -> Int
@@ -1753,24 +1594,6 @@ pub fn sorted_by_value[K : Hash + Eq, V](
 }
 
 ///|
-/// Returns a new map with entries sorted in natural order by keys.
-/// The original map is not modified.
-/// The key type must implement the `Compare` trait.
-///
-/// Parameters:
-/// 
-/// * `self` : The index map to sort.
-///
-/// Example:
-///
-/// ```moonbit
-/// test "sorted" {
-///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-///   let sorted_map = map.sorted()
-///   inspect!(sorted_map.keys(), content=["a", "b", "c"])
-///   inspect!(map.keys(), content=["c", "a", "b"]) // 原始映射保持不变
-/// }
-/// ```
 pub fn sorted[K : Hash + Eq + Compare, V](self : T[K, V]) -> T[K, V] {
   self.sorted_by_key(fn(k1, k2) {
     if k1 < k2 {
@@ -1784,23 +1607,6 @@ pub fn sorted[K : Hash + Eq + Compare, V](self : T[K, V]) -> T[K, V] {
 }
 
 ///|
-/// Returns a new map with entries sorted by values in natural order.
-/// The original map is not modified.
-/// The value type must implement the `Compare` trait.
-///
-/// Parameters:
-/// 
-/// * `self` : The index map to sort.
-///
-/// Example:
-///
-/// ```moonbit
-/// test "sorted_by_values" {
-///   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-///   let sorted_map = map.sorted_by_values()
-///   inspect!(sorted_map.values(), content=[1, 2, 3])
-/// }
-/// ```
 pub fn sorted_by_values[K : Hash + Eq, V : Compare](self : T[K, V]) -> T[K, V] {
   self.sorted_by_value(fn(v1, v2) {
     if v1 < v2 {
@@ -1814,23 +1620,6 @@ pub fn sorted_by_values[K : Hash + Eq, V : Compare](self : T[K, V]) -> T[K, V] {
 }
 
 ///|
-/// Returns a new map with entries in reverse order from the original map.
-/// The original map is not modified.
-///
-/// Parameters:
-/// 
-/// * `self` : The index map to reverse.
-///
-/// Example:
-///
-/// ```moonbit
-/// test "reversed" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-///   let rev_map = map.reversed()
-///   inspect!(rev_map.keys(), content=["c", "b", "a"])
-///   inspect!(map.keys(), content=["a", "b", "c"]) // 原始映射保持不变
-/// }
-/// ```
 pub fn reversed[K : Hash + Eq, V](self : T[K, V]) -> T[K, V] {
   // 创建新映射
   let result = new(capacity=self.size)
