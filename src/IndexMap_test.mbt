@@ -529,3 +529,189 @@ test "IndexSet arbitrary" {
     content="[IndexMap::of([(0, 0)]), IndexMap::of([(0, -2), (-1, 2)]), IndexMap::of([(0, 2), (-1, -2), (-3, 2), (1, -2), (-4, 1), (6, 1), (3, 2)]), IndexMap::of([(0, 0)])]",
   )
 }
+
+///|
+struct Person {
+  name : String
+  age : Int
+} derive(Eq, Show)
+
+///|
+impl Compare for Person with compare(self, other) {
+  if self.age != other.age {
+    self.age - other.age // Sort by age
+  } else {
+    self.name.compare(other.name) // Then by name
+  }
+}
+
+///|
+fn get_score(scores : @sorted_map.T[Int, Int], student_id : Int) -> Int {
+  match scores.get(student_id) {
+    Some(score) => score
+    None => {
+      println(
+        "Student ID " +
+        student_id.to_string() +
+        " does not exist, returning default score",
+      )
+      0 // Default score
+    }
+  }
+}
+
+///|
+/// 测试键值更新功能
+test "update_existing_key" {
+  let map : T[String, Int] = @IndexMap.new()
+
+  // 首次插入键值对
+  map.set("key1", 100)
+  assert_eq!(map.get("key1"), Some(100))
+
+  // 更新同一个键的值
+  map.set("key1", 200)
+  assert_eq!(map.get("key1"), Some(200))
+  assert_eq!(map.size(), 1) // 确认大小没有变化，只是更新了值
+}
+
+///|
+/// 测试首次插入元素更新头节点
+test "first_element_head_update" {
+  let map : T[String, Int] = @IndexMap.new()
+
+  // 确认初始状态
+  assert_eq!(map.size(), 0)
+
+  // 使用断言检查私有成员是否为期望值
+  let first_entry = map.first()
+  assert_eq!(first_entry, None)
+
+  // 插入第一个元素
+  map.set("first", 1)
+
+  // 验证头节点已正确设置
+  assert_eq!(map.first(), Some(("first", 1)))
+  assert_eq!(map.last(), Some(("first", 1)))
+}
+
+///|
+/// 测试get_or_init函数
+test "get_or_init_function" {
+  let map : T[String, Int] = @IndexMap.new()
+
+  // 记录init函数调用次数
+  let mut init_calls = 0
+
+  // 对不存在的键调用get_or_init
+  let value1 = map.get_or_init("new_key", fn() {
+    init_calls += 1
+    42
+  })
+  assert_eq!(value1, 42)
+  assert_eq!(init_calls, 1)
+  assert_eq!(map.get("new_key"), Some(42))
+
+  // 对已存在的键调用get_or_init
+  let value2 = map.get_or_init("new_key", fn() {
+    init_calls += 1
+    100 // 这个值不应该被使用
+  })
+  assert_eq!(value2, 42) // 返回已存在的值
+  assert_eq!(init_calls, 1) // init函数不应该再次调用
+  assert_eq!(map.get("new_key"), Some(42))
+}
+
+///|
+/// 测试空映射上的remove操作
+test "remove_on_empty_map" {
+  let map : T[String, Int] = @IndexMap.new()
+
+  // 确认映射为空
+  assert_eq!(map.size(), 0)
+
+  // 在空映射上执行remove，不应抛出错误
+  map.remove("non_existent_key")
+
+  // 映射应该仍然为空
+  assert_eq!(map.size(), 0)
+}
+
+///|
+/// 测试触发扩容
+test "capacity_growth" {
+  // 创建一个较小容量的映射
+  let map : T[Int, String] = @IndexMap.new(capacity=4)
+
+  // 记录初始容量
+  let initial_capacity = map.capacity()
+  assert_eq!(initial_capacity, 4)
+
+  // 计算增长阈值 (75% 负载因子)
+  let growth_threshold = initial_capacity * 3 / 4
+
+  // 添加足够的元素以触发扩容
+  for i in 0..<growth_threshold {
+    map.set(i, "value" + i.to_string())
+  }
+
+  // 添加一个额外的元素应该触发扩容
+  map.set(growth_threshold, "trigger growth")
+
+  // 验证容量已增加
+  assert_true!(map.capacity() > initial_capacity)
+  assert_eq!(map.capacity(), 8) // 应该是原来的两倍
+
+  // 验证所有元素仍然存在
+  for i in 0..=growth_threshold {
+    assert_eq!(map.get(i), Some("value" + i.to_string()))
+  }
+}
+
+///|
+/// 测试尾节点的后继更新
+test "tail_next_pointer_update" {
+  let map : T[String, Int] = @IndexMap.new()
+
+  // 添加第一个元素
+  map.set("first", 1)
+
+  // 添加第二个元素，这会更新原尾节点的后继
+  map.set("second", 2)
+
+  // 验证链表顺序正确
+  assert_eq!(map.to_array(), [("first", 1), ("second", 2)])
+
+  // 验证tail指向最后添加的元素
+  assert_eq!(map.last(), Some(("second", 2)))
+
+  // 添加第三个元素
+  map.set("third", 3)
+
+  // 再次验证链表顺序
+  assert_eq!(map.to_array(), [("first", 1), ("second", 2), ("third", 3)])
+
+  // 确认tali指向最新添加的元素
+  assert_eq!(map.last(), Some(("third", 3)))
+}
+
+///|
+test "0" {
+  let map : T[String, Int] = @IndexMap.new()
+  assert_eq!(map.values(), [])
+  assert_eq!(map.keys(), [])
+  let mut test0 = map.shift()
+  assert_eq!(test0, None)
+  test0 = map.last()
+  assert_eq!(test0, None)
+  test0 = map.first()
+  assert_eq!(test0, None)
+  test0 = map.get_first()
+  assert_eq!(test0, None)
+  test0 = map.get_last()
+  assert_eq!(test0, None)
+  test0 = map.pop()
+  assert_eq!(test0, None)
+  map.remove("1")
+  assert_eq!(map.size(), 0)
+}
