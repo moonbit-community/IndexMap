@@ -1081,7 +1081,7 @@ test "iter2_early_termination" {
 
   // 使用iter2迭代并主动中断
   let mut count = 0
-  let  result = []
+  let result = []
 
   // 使用for循环在第二个元素后中断
   for k, v in map {
@@ -1129,6 +1129,7 @@ test "shift_with_missing_position_mapping" {
   assert_eq!(map.size(), 1)
   assert_eq!(map.get("new_key"), Some("new_value"))
 }
+
 ///|
 /// 测试sorted函数处理相等键的情况
 test "sorted_with_equal_keys" {
@@ -1138,34 +1139,156 @@ test "sorted_with_equal_keys" {
   let key2 = TestKey::{ id: 2, value: 10 } // 与key1相等(根据compare方法)
   let key3 = TestKey::{ id: 3, value: 20 }
   let key4 = TestKey::{ id: 4, value: 10 } // 与key1、key2相等
-  
+
   // 创建映射并添加元素（以不同的顺序添加）
   let map = @IndexMap.new()
   map.set(key3, "C") // 值为20的键
   map.set(key1, "A") // 第一个值为10的键
   map.set(key4, "D") // 第三个值为10的键
   map.set(key2, "B") // 第二个值为10的键
-  
+
   // 获取排序后的映射
   let sorted_map = map.sorted()
-  
+
   // 获取排序后的键
   let keys = sorted_map.keys()
-  
+
   // 验证排序结果
   assert_eq!(keys.length(), 4)
-  
+
   // 前三个键的value都应该是10
   assert_eq!(keys[0].value, 10)
   assert_eq!(keys[1].value, 10)
   assert_eq!(keys[2].value, 10)
   assert_eq!(keys[3].value, 20)
-  
+
   // 相等键应该保持原始插入顺序
   assert_eq!(keys[0].id, 1) // key1
   assert_eq!(keys[1].id, 4) // key4
   assert_eq!(keys[2].id, 2) // key2
-  
+
   // 原始映射不变
   assert_eq!(map.keys()[0].value, 20) // key3
+}
+
+///|
+/// 测试set_with_hash函数更新已存在键的值
+test "set_with_hash_update_existing_key" {
+  let map = @IndexMap.new()
+
+  // 创建一个键和预计算的哈希值
+  let key = "test_key"
+  let hash = key.hash()
+
+  // 首次使用set_with_hash插入
+  map.set_with_hash(key, "original_value", hash)
+  assert_eq!(map.get(key), Some("original_value"))
+  assert_eq!(map.size(), 1)
+
+  // 使用相同键和哈希值更新现有值
+  map.set_with_hash(key, "updated_value", hash)
+
+  // 验证值已更新但大小不变
+  assert_eq!(map.get(key), Some("updated_value"))
+  assert_eq!(map.size(), 1)
+}
+
+///|
+/// 测试set_with_hash函数更新尾节点的后继指针
+test "set_with_hash_update_tail_next" {
+  let map = @IndexMap.new()
+
+  // 插入第一个元素
+  let key1 = "first"
+  let hash1 = key1.hash()
+  map.set_with_hash(key1, 1, hash1)
+
+  // 记录初始尾节点
+  let initial_tail = map.last()
+  assert_eq!(initial_tail, Some((key1, 1)))
+
+  // 使用set_with_hash添加第二个元素
+  let key2 = "second"
+  let hash2 = key2.hash()
+  map.set_with_hash(key2, 2, hash2)
+
+  // 验证链表更新正确
+  // 1. 新的尾节点应该是第二个元素
+  assert_eq!(map.last(), Some((key2, 2)))
+
+  // 2. 验证顺序正确（通过转换为数组并检查顺序）
+  let array = map.to_array()
+  assert_eq!(array, [(key1, 1), (key2, 2)])
+
+  // 3. 可以通过第一个元素遍历到第二个元素
+  let mut found_second = false
+  map.each(fn(k, v) {
+    if k == key1 {
+      // 检查下一个元素是否是key2
+      let next_entry = map.get_at(1)
+      if next_entry == Some((key2, 2)) {
+        found_second = true
+      }
+    }
+  })
+  assert_true!(found_second)
+}
+
+///|
+/// 测试set_with_hash函数触发扩容逻辑
+test "set_with_hash_triggers_growth" {
+  // 创建一个较小容量的映射以便快速触发扩容
+  let map = @IndexMap.new(capacity=4)
+
+  // 记录初始容量
+  let initial_capacity = map.capacity()
+  assert_eq!(initial_capacity, 4)
+
+  // 计算增长阈值 (75% 负载因子)
+  let growth_threshold = initial_capacity * 3 / 4 // 应该是3
+
+  // 使用set_with_hash添加元素直到即将触发扩容
+  for i in 0..<growth_threshold {
+    let key = "key" + i.to_string()
+    let hash = key.hash()
+    map.set_with_hash(key, i, hash)
+  }
+
+  // 添加一个额外元素触发扩容
+  let trigger_key = "trigger"
+  let trigger_hash = trigger_key.hash()
+
+  // 添加触发扩容的元素
+  map.set_with_hash(trigger_key, 999, trigger_hash)
+
+  // 验证容量已增长
+  assert_true!(map.capacity() > initial_capacity)
+  // 通常是翻倍
+  assert_eq!(map.capacity(), initial_capacity * 2)
+
+  // 验证所有元素仍然存在
+  for i in 0..<growth_threshold {
+    let key = "key" + i.to_string()
+    assert_eq!(map.get(key), Some(i))
+  }
+  assert_eq!(map.get(trigger_key), Some(999))
+}
+
+///|
+/// 测试set_with_hash函数在容量为0的情况下正确扩容
+test "set_with_hash_growth_from_zero_capacity" {
+  // 创建零容量的映射
+  let map = @IndexMap.new(capacity=0)
+
+  // 验证初始容量
+  assert_eq!(map.capacity(), 0)
+
+  // 使用set_with_hash添加元素
+  let key = "test"
+  let hash = key.hash()
+  map.set_with_hash(key, "value", hash)
+
+  // 验证容量已增长到有效值
+  assert_true!(map.capacity() > 0)
+  assert_eq!(map.get(key), Some("value"))
 }
