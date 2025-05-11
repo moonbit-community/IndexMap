@@ -475,10 +475,9 @@ pub fn remove[K : Hash + Eq, V](self : T[K, V], key : K) -> Unit {
       let hash = entry.hash
 
       // 获取被删除元素的位置索引
-      let position = match self.core.idx_to_position.get(idx) {
-        Some(pos) => pos
-        None => return // 应该不会发生，防御性编程
-      }
+      // 此处一定能获取到位置，因为idx是从key_to_idx中获得的有效索引
+      // 如果key_to_idx包含这个键，那么idx_to_position也应该包含对应的索引
+      let position = self.core.idx_to_position.get(idx).unwrap()
 
       // 修复链表指针
       // 如果有前一个元素，更新它的next指针
@@ -614,6 +613,35 @@ impl Hash for MyString with hash_combine(self, hasher) {
 ///|
 impl Show for MyString with output(self, logger) {
   logger.write_string(self._)
+}
+
+///|
+test "MyString hash_combine implementation" {
+  // 创建两个内容相同但对象不同的MyString实例
+  let str1 = "test_string"
+  let str2 = "test_string"
+
+  // 创建一个使用MyString作为键的映射
+  let map = new()
+
+  // 使用第一个字符串设置值
+  map.set(str1, "value1")
+
+  // 使用第二个字符串读取值 - 如果哈希正确合并，应该找到相同的值
+  let result = map.get(str2)
+
+  // 验证结果
+  assert_eq!(result, Some("value1"))
+
+  // 确认只有一个元素（即两个MyString哈希到同一个桶）
+  assert_eq!(map.size(), 1)
+
+  // 测试哈希值本身是否一致
+  assert_eq!(str1.hash(), str2.hash())
+
+  // 测试不同内容的字符串是否正确区分
+  let str3 = "different_string"
+  assert_true!(str1.hash() != str3.hash())
 }
 
 ///|
@@ -1361,10 +1389,7 @@ pub fn shift[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? {
   self.key_to_idx.remove(key)
 
   // 获取头部元素的位置（应该是0）
-  let position = match self.core.idx_to_position.get(head_idx) {
-    Some(pos) => pos
-    None => 0
-  }
+  let position = self.core.idx_to_position.get(head_idx).unwrap()
 
   // 使用交换策略：将最后一个元素移动到第一个位置
   if self.size > 1 {
