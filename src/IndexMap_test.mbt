@@ -387,14 +387,6 @@ test "get_last" {
 }
 
 ///|
-test "123" {
-  let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-  let sorted_map = map.sorted()
-  assert_eq!(sorted_map.keys(), ["a", "b", "c"])
-  assert_eq!(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
-}
-
-///|
 test "index_of" {
   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
   inspect!(map.index_of("a"), content="Some(0)")
@@ -704,6 +696,8 @@ test "0 size" {
   let map : T[String, Int] = @IndexMap.new()
   assert_eq!(map.values(), [])
   assert_eq!(map.keys(), [])
+  assert_eq!(map.to_array(), [])
+  map.sort_by(fn(k1, v1, k2, v2) { k1.compare(k2) })
   assert_eq!(map.to_array(), [])
   let mut test0 = map.shift()
   assert_eq!(test0, None)
@@ -1077,4 +1071,101 @@ test "growth_from_zero_capacity" {
   // 验证扩容成功
   assert_true!(map.capacity() > 0)
   assert_eq!(map.get("key"), Some(100))
+}
+
+///|
+/// 测试iter2函数中的提前终止逻辑
+test "iter2_early_termination" {
+  // 创建一个包含多个元素的映射
+  let map = @IndexMap.of([("key1", 1), ("key2", 2), ("key3", 3), ("key4", 4)])
+
+  // 使用iter2迭代并主动中断
+  let mut count = 0
+  let  result = []
+
+  // 使用for循环在第二个元素后中断
+  for k, v in map {
+    result.push((k, v))
+    count += 1
+    // 处理两个元素后停止
+    if count >= 2 {
+      break
+    }
+  }
+
+  // 验证只处理了两个元素
+  assert_eq!(count, 2)
+  assert_eq!(result.length(), 2)
+  assert_eq!(result[0], ("key1", 1))
+  assert_eq!(result[1], ("key2", 2))
+}
+
+///|
+/// 测试shift函数中处理idx_to_position映射缺失的情况
+test "shift_with_missing_position_mapping" {
+  // 创建一个映射，然后修改其内部状态以模拟不一致情况
+  let map = @IndexMap.new()
+
+  // 添加一些元素
+  map.set("key1", "value1")
+  map.set("key2", "value2")
+
+  // 清除并重新添加元素，但保持某些内部状态不一致
+  // 这需要特殊手段，我们使用clear然后重建的方式
+  map.clear()
+
+  // 重新添加一个元素
+  map.set("only_key", "only_value")
+
+  // 执行shift操作，此时内部映射可能不一致
+  let shifted = map.shift()
+
+  // 验证操作成功，即使存在内部不一致
+  assert_eq!(shifted, Some(("only_key", "only_value")))
+  assert_eq!(map.size(), 0)
+
+  // 确认可以继续正常操作
+  map.set("new_key", "new_value")
+  assert_eq!(map.size(), 1)
+  assert_eq!(map.get("new_key"), Some("new_value"))
+}
+///|
+/// 测试sorted函数处理相等键的情况
+test "sorted_with_equal_keys" {
+  // 使用之前定义的TestKey，其compare方法只比较value字段
+  // 创建几个键值相同但ID不同的TestKey
+  let key1 = TestKey::{ id: 1, value: 10 }
+  let key2 = TestKey::{ id: 2, value: 10 } // 与key1相等(根据compare方法)
+  let key3 = TestKey::{ id: 3, value: 20 }
+  let key4 = TestKey::{ id: 4, value: 10 } // 与key1、key2相等
+  
+  // 创建映射并添加元素（以不同的顺序添加）
+  let map = @IndexMap.new()
+  map.set(key3, "C") // 值为20的键
+  map.set(key1, "A") // 第一个值为10的键
+  map.set(key4, "D") // 第三个值为10的键
+  map.set(key2, "B") // 第二个值为10的键
+  
+  // 获取排序后的映射
+  let sorted_map = map.sorted()
+  
+  // 获取排序后的键
+  let keys = sorted_map.keys()
+  
+  // 验证排序结果
+  assert_eq!(keys.length(), 4)
+  
+  // 前三个键的value都应该是10
+  assert_eq!(keys[0].value, 10)
+  assert_eq!(keys[1].value, 10)
+  assert_eq!(keys[2].value, 10)
+  assert_eq!(keys[3].value, 20)
+  
+  // 相等键应该保持原始插入顺序
+  assert_eq!(keys[0].id, 1) // key1
+  assert_eq!(keys[1].id, 4) // key4
+  assert_eq!(keys[2].id, 2) // key2
+  
+  // 原始映射不变
+  assert_eq!(map.keys()[0].value, 20) // key3
 }

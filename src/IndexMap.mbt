@@ -166,7 +166,7 @@ pub fn set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
 
 ///|///|
 /// Sets a key-value pair with a pre-computed hash
-fn set_with_hash[K : Hash + Eq, V](
+pub fn set_with_hash[K : Hash + Eq, V](
   self : T[K, V],
   key : K,
   value : V,
