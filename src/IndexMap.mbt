@@ -786,7 +786,11 @@ fn grow[K : Hash + Eq, V](self : T[K, V]) -> Unit {
   let old_head = self.core.head
 
   // 创建新的存储
-  self.capacity = self.capacity * 2
+  if self.capacity == 0 {
+    self.capacity = 8 // 设置默认初始容量
+  } else {
+    self.capacity = self.capacity * 2
+  }
   self.growAt = calc_grow_threshold(self.capacity)
   self.core.hash_to_idx = @hashmap.new()
   self.core.entries = []

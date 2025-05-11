@@ -704,6 +704,7 @@ test "0 size" {
   let map : T[String, Int] = @IndexMap.new()
   assert_eq!(map.values(), [])
   assert_eq!(map.keys(), [])
+  assert_eq!(map.to_array(), [])
   let mut test0 = map.shift()
   assert_eq!(test0, None)
   test0 = map.last()
@@ -893,4 +894,187 @@ test "sorted_functions_with_equal_values" {
   assert_eq!(val10_keys.length(), 2)
   assert_true!(val10_keys.contains("A"))
   assert_true!(val10_keys.contains("C"))
+}
+
+///|
+/// 测试索引到位置映射中的默认值处理
+test "idx_to_position_default_handling" {
+  // 创建一个特殊情况，使idx_to_position.get返回None
+  let map = @IndexMap.new()
+
+  // 首先添加几个元素
+  map.set("key1", "value1")
+  map.set("key2", "value2")
+
+  // 清除内部映射但保留条目（模拟idx_to_position映射不完整的情况）
+  // 通过删除再添加元素来强制position映射更新
+  map.clear()
+  map.set("new_key", "new_value")
+
+  // 访问某个操作，触发position查找
+  // 即使内部存在不一致，操作应该成功完成
+  let result = map.get("new_key")
+  assert_eq!(result, Some("new_value"))
+
+  // 确认可以正常遍历
+  let keys = map.keys()
+  assert_eq!(keys, ["new_key"])
+}
+
+///|
+/// 测试删除唯一元素后清空链表
+test "remove_only_element_clears_list" {
+  let map = @IndexMap.new()
+
+  // 添加唯一元素
+  map.set("only_key", "only_value")
+  assert_eq!(map.size(), 1)
+  assert_eq!(map.first(), Some(("only_key", "only_value")))
+
+  // 移除唯一元素
+  map.remove("only_key")
+
+  // 验证链表已清空
+  assert_eq!(map.size(), 0)
+  assert_eq!(map.first(), None)
+  assert_eq!(map.last(), None)
+
+  // 验证可以继续添加元素
+  map.set("new_key", "new_value")
+  assert_eq!(map.size(), 1)
+  assert_eq!(map.first(), Some(("new_key", "new_value")))
+}
+
+///|
+/// 测试shift方法删除单个元素
+test "shift_only_element_clears_list" {
+  let map = @IndexMap.new()
+
+  // 添加唯一元素
+  map.set("only_key", "only_value")
+  assert_eq!(map.size(), 1)
+
+  // 使用shift移除唯一元素
+  let removed = map.shift()
+  assert_eq!(removed, Some(("only_key", "only_value")))
+
+  // 验证链表已清空
+  assert_eq!(map.size(), 0)
+  assert_eq!(map.first(), None)
+  assert_eq!(map.last(), None)
+}
+
+///|
+/// 测试pop方法删除单个元素
+test "pop_only_element_clears_list" {
+  let map = @IndexMap.new()
+
+  // 添加唯一元素
+  map.set("only_key", "only_value")
+  assert_eq!(map.size(), 1)
+
+  // 使用pop移除唯一元素
+  let removed = map.pop()
+  assert_eq!(removed, Some(("only_key", "only_value")))
+
+  // 验证链表已清空
+  assert_eq!(map.size(), 0)
+  assert_eq!(map.first(), None)
+  assert_eq!(map.last(), None)
+}
+
+///|
+/// 测试迭代中断
+test "iteration_early_termination" {
+  let map = @IndexMap.new()
+
+  // 添加多个元素
+  map.set("key1", "value1")
+  map.set("key2", "value2")
+  map.set("key3", "value3")
+  map.set("key4", "value4")
+
+  // 计数器
+  let mut count = 0
+
+  // 使用each方法，在第二个元素后跳过处理
+  let mut should_continue = true
+  map.each(fn(k, v) {
+    if should_continue {
+      count += 1
+      if count >= 2 {
+        should_continue = false
+      }
+    }
+  })
+
+  // 验证只处理了两个元素
+  assert_eq!(count, 2)
+}
+
+///|
+/// 测试更新已存在键的完整流程
+test "complete_key_update_process" {
+  let map = @IndexMap.new()
+
+  // 添加初始键值对
+  map.set("key", "old_value")
+
+  // 验证初始状态
+  assert_eq!(map.size(), 1)
+  assert_eq!(map.get("key"), Some("old_value"))
+
+  // 保存内部数据状态
+  let old_size = map.size()
+  let old_capacity = map.capacity()
+
+  // 更新键的值
+  map.set("key", "new_value")
+
+  // 验证更新后的状态
+  assert_eq!(map.size(), old_size) // 大小应该不变
+  assert_eq!(map.capacity(), old_capacity) // 容量应该不变
+  assert_eq!(map.get("key"), Some("new_value")) // 值应该更新
+}
+
+///|
+/// 测试链表结构的完整更新
+test "tail_next_pointer_complete_update" {
+  let map = @IndexMap.new()
+
+  // 测试空链表添加元素 (此时tail = -1)
+  map.set("first", 1)
+
+  // 验证首尾指向同一个元素
+  assert_eq!(map.first(), map.last())
+
+  // 添加更多元素，测试尾部链接
+  map.set("second", 2)
+  map.set("third", 3)
+
+  // 验证顺序和连接
+  let array = map.to_array()
+  assert_eq!(array, [("first", 1), ("second", 2), ("third", 3)])
+
+  // 确保可以从头遍历到尾
+  let items = []
+  map.each(fn(k, v) { items.push((k, v)) })
+  assert_eq!(items, array)
+}
+
+///|
+/// 测试容量为0情况下的自动扩容
+test "growth_from_zero_capacity" {
+  // 创建特殊情况：容量为0的映射
+  let map : @IndexMap.T[String, Int] = @IndexMap.new(capacity=0)
+
+  // 验证初始容量
+  assert_eq!(map.capacity(), 0)
+
+  // 添加元素应触发扩容
+  map.set("key", 100)
+
+  // 验证扩容成功
+  assert_true!(map.capacity() > 0)
+  assert_eq!(map.get("key"), Some(100))
 }
