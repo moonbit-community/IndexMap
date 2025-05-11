@@ -1661,7 +1661,6 @@ pub fn reversed[K : Hash + Eq, V](self : T[K, V]) -> T[K, V] {
     pairs.push((entry.key, entry.value))
     current = entry.next
   }
-
   // 反向填充新映射
   let mut i = pairs.length() - 1
   while i >= 0 {

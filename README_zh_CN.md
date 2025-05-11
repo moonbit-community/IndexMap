@@ -2,7 +2,7 @@
 
 [English](https://github.com/moonbit-community/IndexMap/blob/master/README.md) | [简体中文](https://github.com/moonbit-community/IndexMap/blob/master/README_zh_CN.md)
 
-[![构建状态](https://img.shields.io/github/actions/workflow/status/moonbit-community/unicodeUtil/ci.yml)](https://github.com/moonbit-community/IndexMap/actions)  [![许可证](https://img.shields.io/github/license/moonbit-community/unicodeUtil)](LICENSE)  [![代码覆盖率](https://codecov.io/gh/moonbit-community/NyaSearch/branch/main/graph/badge.svg)](https://codecov.io/gh/moonbit-community/IndexMap)  
+[![构建状态](https://img.shields.io/github/actions/workflow/status/moonbit-community/IndexMap/ci.yml)](https://github.com/moonbit-community/IndexMap/actions)  [![许可证](https://img.shields.io/github/license/moonbit-community/IndexMap)](LICENSE)  [![代码覆盖率](https://codecov.io/gh/moonbit-community/IndexMap/branch/master/graph/badge.svg)](https://codecov.io/gh/moonbit-community/IndexMap)  
 
 类似于Rust的`IndexMap`，这是一个与MoonBit核心`IndexMap`库所有操作兼容的数据结构实现。
 

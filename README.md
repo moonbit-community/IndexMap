@@ -5,7 +5,7 @@ Here's the reformatted version of your IndexMap documentation following the spec
 
 [English](https://github.com/moonbit-community/IndexMap/blob/master/README.md) | [简体中文](https://github.com/moonbit-community/IndexMap/blob/master/README_zh_CN.md)
 
-[![Build Status](https://img.shields.io/github/actions/workflow/status/moonbit-community/unicodeUtil/ci.yml)](https://github.com/moonbit-community/IndexMap/actions)  [![License](https://img.shields.io/github/license/moonbit-community/unicodeUtil)](LICENSE)  [![codecov](https://codecov.io/gh/moonbit-community/NyaSearch/branch/main/graph/badge.svg)](https://codecov.io/gh/moonbit-community/IndexMap)  
+[![Build Status](https://img.shields.io/github/actions/workflow/status/moonbit-community/IndexMap/ci.yml)](https://github.com/moonbit-community/IndexMap/actions)  [![License](https://img.shields.io/github/license/moonbit-community/IndexMap)](LICENSE)  [![codecov](https://codecov.io/gh/moonbit-community/IndexMap/branch/master/graph/badge.svg)](https://codecov.io/gh/moonbit-community/IndexMap)  
 
 Similar to Rust's `IndexMap`, this is an implementation of a data structure that is compatible with all operations in MoonBit's core `IndexMap` library.
 
