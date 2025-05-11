@@ -700,7 +700,7 @@ test "tail_next_pointer_update" {
 }
 
 ///|
-test "0" {
+test "0 size" {
   let map : T[String, Int] = @IndexMap.new()
   assert_eq!(map.values(), [])
   assert_eq!(map.keys(), [])
@@ -718,4 +718,179 @@ test "0" {
   assert_eq!(test0, None)
   map.remove("1")
   assert_eq!(map.size(), 0)
+}
+
+///|
+/// 测试to_json_string函数
+test "to_json_string_function" {
+  let map = @IndexMap.new()
+  map.set("name", "John")
+  map.set("age", "30")
+  map.set("city", "New York")
+
+  // 验证JSON字符串格式正确，并且保持了插入顺序
+  let json = map.to_json_string()
+  // 使用实际输出的格式进行断言
+  assert_true!(json.contains("\"name\":String(\"John\")"))
+  assert_true!(json.contains("\"age\":String(\"30\")"))
+  assert_true!(json.contains("\"city\":String(\"New York\")"))
+
+  // 确认顺序正确（通过检查子字符串相对位置）
+  let name_pos = json.index_of("name")
+  let age_pos = json.index_of("age")
+  let city_pos = json.index_of("city")
+  assert_true!(name_pos < age_pos)
+  assert_true!(age_pos < city_pos)
+}
+
+///|
+/// 测试contains_key函数
+test "contains_key_function" {
+  let map = @IndexMap.new()
+  map.set("key1", "value1")
+
+  // 测试存在的键
+  assert_true!(map.contains_key("key1"))
+
+  // 测试不存在的键
+  assert_false!(map.contains_key("key2"))
+}
+
+///|
+/// 测试set函数中更新已存在键的值逻辑
+test "set_update_existing_key" {
+  let map = @IndexMap.new()
+
+  // 首次插入
+  map.set("key", "original_value")
+  assert_eq!(map.get("key"), Some("original_value"))
+
+  // 获取初始大小和顺序信息
+  let initial_size = map.size()
+  let initial_keys = map.keys()
+
+  // 更新已存在的键
+  map.set("key", "updated_value")
+
+  // 验证值已更新
+  assert_eq!(map.get("key"), Some("updated_value"))
+
+  // 验证大小未变化（没有添加新条目）
+  assert_eq!(map.size(), initial_size)
+
+  // 验证键的顺序未变化
+  assert_eq!(map.keys(), initial_keys)
+}
+
+///|
+/// 测试reverse函数处理size <= 1的情况
+test "reverse_with_small_size" {
+  // 测试空映射
+  let empty_map = @IndexMap.new()
+  let empty_keys_before = empty_map.keys()
+  empty_map.reverse()
+  let empty_keys_after = empty_map.keys()
+  assert_eq!(empty_keys_before, empty_keys_after)
+
+  // 测试只有一个元素的映射
+  let single_map = @IndexMap.new()
+  single_map.set("key", "value")
+  let single_keys_before = single_map.keys()
+  single_map.reverse()
+  let single_keys_after = single_map.keys()
+  assert_eq!(single_keys_before, single_keys_after)
+  assert_eq!(single_map.get("key"), Some("value"))
+}
+
+///|
+// 创建自定义键类型
+struct TestKey {
+  id : Int
+  value : Int
+} derive(Eq, Show)
+
+///|
+impl Hash for TestKey with hash_combine(self, hasher) {
+  hasher.combine_int(self.value)
+}
+
+///|
+impl Compare for TestKey with compare(self, other) {
+  // 只比较value字段，忽略id字段
+  if self.value < other.value {
+    return -1
+  } else if self.value > other.value {
+    return 1
+  } else {
+    return 0 // 相等情况
+  }
+}
+
+///|
+/// 测试sort函数中处理相等键的情况
+test "sort_with_equal_keys" {
+
+  // 创建带有相等value但不同id的键的映射
+  let map = @IndexMap.new()
+  map.set(TestKey::{ id: 1, value: 10 }, "A")
+  map.set(TestKey::{ id: 2, value: 20 }, "B")
+  map.set(TestKey::{ id: 3, value: 10 }, "C") // 与第一个键的value相同
+
+  // 执行排序并验证结果
+  map.sort()
+
+  // 获取排序后的键
+  let sorted_keys = map.keys()
+
+  // 验证排序结果（相等的键应保持相对顺序）
+  assert_eq!(sorted_keys[0].value, 10)
+  assert_eq!(sorted_keys[1].value, 10)
+  assert_eq!(sorted_keys[2].value, 20)
+}
+
+///|
+/// 测试sorted_by_key和sorted_by_values中处理相等情况
+test "sorted_functions_with_equal_values" {
+  // 测试sorted_by_key相等情况
+  let map1 = @IndexMap.new()
+  map1.set(10, "A")
+  map1.set(20, "B")
+  map1.set(10, "C") // 相同的键，会覆盖之前的值
+  let result1 = map1.sorted_by_key(fn(k1, k2) {
+    if k1 < k2 {
+      -1
+    } else if k1 > k2 {
+      1
+    } else {
+      0
+    } // 测试相等情况
+  })
+
+  // 验证结果（应该只有一个10键，因为它覆盖了之前的值）
+  assert_eq!(result1.size(), 2)
+  assert_eq!(result1.get(10), Some("C"))
+
+  // 测试sorted_by_values相等情况
+  let map2 = @IndexMap.new()
+  map2.set("A", 10)
+  map2.set("B", 20)
+  map2.set("C", 10) // 相同的值
+  let result2 = map2.sorted_by_values()
+
+  // 验证结果（相等值的键应该保持插入顺序）
+  let keys = result2.keys()
+  assert_eq!(keys.length(), 3)
+
+  // 找到值为10的键，它们应该在前面
+  let val10_keys = []
+  for k in keys {
+    if result2.get(k) == Some(10) {
+      val10_keys.push(k)
+    }
+  }
+
+  // 验证有两个值为10的键
+  assert_eq!(val10_keys.length(), 2)
+  assert_true!(val10_keys.contains("A"))
+  assert_true!(val10_keys.contains("C"))
 }
