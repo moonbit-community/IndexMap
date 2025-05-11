@@ -522,11 +522,11 @@ test "IndexSet arbitrary" {
   let samples : Array[@IndexMap.T[Int, Int]] = @quickcheck.samples(20)
   inspect!(
     samples[5:10],
-    content="[IndexMap::of([(0, -1), (-2, -2)]), IndexMap::of([(0, -2), (1, 2)]), IndexMap::of([(0, 0)]), IndexMap::of([(0, 0)]), IndexMap::of([(0, -1), (2, 0), (4, 1), (-2, -5)])]",
+    content="[IndexMap::of([]), IndexMap::of([]), IndexMap::of([(0, 0)]), IndexMap::of([(0, 0)]), IndexMap::of([(0, 0)])]",
   )
   inspect!(
     samples[11:15],
-    content="[IndexMap::of([(0, 0)]), IndexMap::of([(0, -2), (-1, 2)]), IndexMap::of([(0, 2), (-1, -2), (-3, 2), (1, -2), (-4, 1), (6, 1), (3, 2)]), IndexMap::of([(0, 0)])]",
+    content="[IndexMap::of([(0, 0), (-1, 1), (2, 0), (-3, -2)]), IndexMap::of([(0, 0)]), IndexMap::of([(0, -1), (-2, 5), (7, -7), (-8, 1), (3, 6)]), IndexMap::of([(0, 0)])]",
   )
 }
 
@@ -664,7 +664,11 @@ test "capacity_growth" {
 
   // 验证所有元素仍然存在
   for i in 0..=growth_threshold {
-    assert_eq!(map.get(i), Some("value" + i.to_string()))
+    if i == growth_threshold {
+      assert_eq!(map.get(i), Some("trigger growth"))
+    } else {
+      assert_eq!(map.get(i), Some("value" + i.to_string()))
+    }
   }
 }
 
