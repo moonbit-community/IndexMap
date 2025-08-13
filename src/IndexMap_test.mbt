@@ -347,13 +347,16 @@ test "@IndexMap.contains/after_operations" {
 test "@IndexMap.from_array" {
   let map = @IndexMap.from_array([("a", 1), ("b", 2), ("c", 3)])
   println(map.size())
-  @json.inspect(map, content={ "a": 1, "b": 2, "c": 3 })
+  inspect(map.to_json_string(), content="{\"a\":1,\"b\":2,\"c\":3}")
 }
 
 ///|
 test "@IndexMap.from_array with int key" {
   let map = @IndexMap.from_array([(1, "one"), (2, "two"), (3, "three")])
-  @json.inspect(map, content={ "1": "one", "2": "two", "3": "three" })
+  inspect(
+    map.to_json_string(),
+    content="{\"1\":\"one\",\"2\":\"two\",\"3\":\"three\"}",
+  )
 }
 
 ///|

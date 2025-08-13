@@ -89,7 +89,7 @@ impl T {
   get_last[K, V](self : T[K, V]) -> (K, V)?
 }
 impl[K : Show, V : Show] Show for T[K, V]
-impl[K : Show, V : ToJson] ToJson for T[K, V]
+
 impl[K : @quickcheck.Arbitrary + Hash + Eq, V : @quickcheck.Arbitrary] @quickcheck.Arbitrary for T[K, V]
 
 // Type aliases

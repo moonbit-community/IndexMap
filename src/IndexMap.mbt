@@ -595,8 +595,9 @@ pub impl[K : @quickcheck.Arbitrary + Hash + Eq, V : @quickcheck.Arbitrary] @quic
   V,
 ] with arbitrary(size, rs) {
   let m = new()
-  (@quickcheck.Arbitrary::arbitrary(size, rs) : Iter[(K, V)]).each(fn {
-    (k, v) => m.set(k, v)
+  (@quickcheck.Arbitrary::arbitrary(size, rs) : Iter[(K, V)]).each(fn(pair) {
+    let (k, v) = pair
+    m.set(k, v)
   })
   m
 }
@@ -1087,7 +1088,7 @@ pub impl[K : Show, V : Show] Show for T[K, V] with output(self, logger) {
     ..write_object(k)
     ..write_string(", ")
     ..write_object(v)
-    .write_string(")")
+    ..write_string(")")
   })
   logger.write_string("])")
 }
@@ -1272,22 +1273,6 @@ pub fn[K : Show, V : ToJson] to_json_string(self : T[K, V]) -> String {
     current = entry.next
   }
   result + "}"
-}
-
-///|
-/// Standard ToJson implementation (may not preserve order)
-pub impl[K : Show, V : ToJson] ToJson for T[K, V] with to_json(self) {
-  // 使用普通Map
-  let object = Map::new(capacity=self.size)
-
-  // 按照插入顺序遍历元素
-  let mut current = self.core.head
-  while current != -1 {
-    let entry = self.core.entries[current]
-    object[entry.key.to_string()] = entry.value.to_json()
-    current = entry.next
-  }
-  Object(object)
 }
 
 ///|
@@ -1616,7 +1601,7 @@ pub fn[K : Hash + Eq, V] sorted_by_key(
   self : T[K, V],
   compare : (K, K) -> Int,
 ) -> T[K, V] {
-  self.sorted_by(fn(k1, v1, k2, v2) { compare(k1, k2) })
+  self.sorted_by(fn(k1, _, k2, _) { compare(k1, k2) })
 }
 
 ///|
@@ -1624,7 +1609,7 @@ pub fn[K : Hash + Eq, V] sorted_by_value(
   self : T[K, V],
   compare : (V, V) -> Int,
 ) -> T[K, V] {
-  self.sorted_by(fn(k1, v1, k2, v2) { compare(v1, v2) })
+  self.sorted_by(fn(_, v1, _, v2) { compare(v1, v2) })
 }
 
 ///|
