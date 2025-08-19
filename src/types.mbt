@@ -20,7 +20,7 @@ priv struct Bucket[K, V] {
   mut value : V // 值
   mut next : Int // 链表后继索引，-1表示没有后继
   mut prev : Int // 链表前驱索引，-1表示没有前驱
-} derive(Show)
+}
 
 ///|
 /// IndexMap核心结构，包含所有数据组织功能
@@ -31,7 +31,7 @@ priv struct IndexMapCore[K, V] {
   mut tail : Int // 链表尾节点索引，-1表示空链表
   mut position_to_idx : Array[Int] // 位置到桶索引的映射，支持O(1)的索引访问
   mut idx_to_position : @hashmap.T[Int, Int] // 桶索引到位置的映射，使index_of操作为O(1)
-} derive(Show)
+}
 
 /// A mutable indexed hash map.
 ///
