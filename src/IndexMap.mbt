@@ -21,14 +21,10 @@ fn calc_grow_threshold(capacity : Int) -> Int {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "new" {
-///   let map : @hashmap.T[String, Int] = @hashmap.new(capacity=16)
-///   inspect!(map.capacity(), content="16")
-///   inspect!(map.is_empty(), content="true")
-/// }
-/// ```
-pub fn new[K, V](capacity~ : Int = Default_init_capacity) -> T[K, V] {
+/// let map : @IndexMap.T[String, Int] = @IndexMap.new(capacity=16)
+/// inspect(map.capacity(), content="16")
+/// inspect(map.is_empty(), content="true")
+pub fn[K, V] new(capacity~ : Int = Default_init_capacity) -> T[K, V] {
   {
     core: {
       hash_to_idx: @hashmap.new(),
@@ -59,17 +55,14 @@ pub fn new[K, V](capacity~ : Int = Default_init_capacity) -> T[K, V] {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "from_array" {
-///   let arr = [(1, "one"), (2, "two"), (1, "ONE")]
-///   let map = @hashmap.from_array(arr)
-///   inspect!(map.get(1), content="Some(\"ONE\")")
-///   inspect!(map.get(2), content="Some(\"two\")")
-/// }
-/// ```
+/// let arr = [(1, "one"), (2, "two"), (1, "ONE")]
+/// let map = @IndexMap.from_array(arr)
+/// inspect(map.get(1), content="Some(\"ONE\")")
+/// inspect(map.get(2), content="Some(\"two\")")
+
 ///|
 /// Create a map from an array of key-value pairs
-pub fn from_array[K : Hash + Eq, V](arr : Array[(K, V)]) -> T[K, V] {
+pub fn[K : Hash + Eq, V] from_array(arr : Array[(K, V)]) -> T[K, V] {
   let map = new(capacity=arr.length())
   for i in 0..<arr.length() {
     let (key, value) = arr[i]
@@ -91,20 +84,17 @@ pub fn from_array[K : Hash + Eq, V](arr : Array[(K, V)]) -> T[K, V] {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "set" {
-///   let map : @hashmap.T[String, Int] = @hashmap.new()
-///   map.set("key", 42)
-///   inspect!(map.get("key"), content="Some(42)")
-///   map.set("key", 24) // update existing key
-///   inspect!(map.get("key"), content="Some(24)")
-/// }
-/// ```
+/// let map : @IndexMap.T[String, Int] = @IndexMap.new()
+/// map.set("key", 42)
+/// inspect(map.get("key"), content="Some(42)")
+/// map.set("key", 24) // update existing key
+/// inspect(map.get("key"), content="Some(24)")
 ///
 /// @alert unsafe "Panic if the hash map is full."
+
 ///|
 /// Sets a key-value pair into the map. If the key already exists, updates its value.
-pub fn set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
+pub fn[K : Hash + Eq, V] set(self : T[K, V], key : K, value : V) -> Unit {
   // 计算哈希值
   let hash = key.hash()
 
@@ -166,11 +156,11 @@ pub fn set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
 
 ///|///|
 /// Sets a key-value pair with a pre-computed hash
-pub fn set_with_hash[K : Hash + Eq, V](
+pub fn[K : Hash + Eq, V] set_with_hash(
   self : T[K, V],
   key : K,
   value : V,
-  hash : Int
+  hash : Int,
 ) -> Unit {
   // 检查键是否已存在
   if self.key_to_idx.contains(key) {
@@ -240,14 +230,10 @@ pub fn set_with_hash[K : Hash + Eq, V](
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "op_set" {
-///   let map : @hashmap.T[String, Int] = @hashmap.new()
-///   map["key"] = 42
-///   inspect!(map.get("key"), content="Some(42)")
-/// }
-/// ```
-pub fn op_set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
+/// let map : @IndexMap.T[String, Int] = @IndexMap.new()
+/// map["key"] = 42
+/// inspect(map.get("key"), content="Some(42)")
+pub fn[K : Hash + Eq, V] op_set(self : T[K, V], key : K, value : V) -> Unit {
   self.set(key, value)
 }
 
@@ -263,14 +249,10 @@ pub fn op_set[K : Hash + Eq, V](self : T[K, V], key : K, value : V) -> Unit {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "get" {
-///   let map = @hashmap.of([("key", 42)])
-///   inspect!(map.get("key"), content="Some(42)")
-///   inspect!(map.get("nonexistent"), content="None")
-/// }
-/// ```
-pub fn get[K : Hash + Eq, V](self : T[K, V], key : K) -> V? {
+/// let map = @IndexMap.of([("key", 42)])
+/// inspect(map.get("key"), content="Some(42)")
+/// inspect(map.get("nonexistent"), content="None")
+pub fn[K : Hash + Eq, V] get(self : T[K, V], key : K) -> V? {
   // 直接从键到索引的映射中查找
   match self.key_to_idx.get(key) {
     Some(idx) => Some(self.core.entries[idx].value)
@@ -280,7 +262,7 @@ pub fn get[K : Hash + Eq, V](self : T[K, V], key : K) -> V? {
 
 ///|
 /// Gets the key-value pair at the given index position.
-pub fn get_at[K, V](self : T[K, V], index : Int) -> (K, V)? {
+pub fn[K, V] get_at(self : T[K, V], index : Int) -> (K, V)? {
   if index < 0 || index >= self.size {
     return None
   }
@@ -296,7 +278,7 @@ pub fn get_at[K, V](self : T[K, V], index : Int) -> (K, V)? {
 }
 
 ///|
-fn get_with_hash[K : Eq, V](self : T[K, V], key : K, hash : Int) -> V? {
+fn[K : Eq, V] get_with_hash(self : T[K, V], key : K, hash : Int) -> V? {
   // 首先检查哈希值是否在 hash_to_idx 中
   match self.core.hash_to_idx.get(hash) {
     Some(idx) => {
@@ -328,14 +310,10 @@ fn get_with_hash[K : Eq, V](self : T[K, V], key : K, hash : Int) -> V? {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "op_get" {
-///   let map = @hashmap.of([("key", 42)])
-///   inspect!(map["key"], content="Some(42)")
-///   inspect!(map["nonexistent"], content="None")
-/// }
-/// ```
-pub fn op_get[K : Hash + Eq, V](self : T[K, V], key : K) -> V? {
+/// let map = @IndexMap.of([("key", 42)])
+/// inspect(map["key"], content="Some(42)")
+/// inspect(map["nonexistent"], content="None")
+pub fn[K : Hash + Eq, V] op_get(self : T[K, V], key : K) -> V? {
   self.get(key)
 }
 
@@ -356,18 +334,14 @@ pub fn op_get[K : Hash + Eq, V](self : T[K, V], key : K) -> V? {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "get_or_init" {
-///   let map : @hashmap.T[String, Int] = @hashmap.new()
-///   let value = map.get_or_init("key", fn() { 42 })
-///   inspect!(value, content="42")
-///   inspect!(map.get("key"), content="Some(42)")
-/// }
-/// ```
-pub fn get_or_init[K : Hash + Eq, V](
+/// let map : @IndexMap.T[String, Int] = @IndexMap.new()
+/// let value = map.get_or_init("key", fn() { 42 })
+/// inspect(value, content="42")
+/// inspect(map.get("key"), content="Some(42)")
+pub fn[K : Hash + Eq, V] get_or_init(
   self : T[K, V],
   key : K,
-  init : () -> V
+  init : () -> V,
 ) -> V {
   let hash = key.hash()
   match self.get_with_hash(key, hash) {
@@ -395,17 +369,13 @@ pub fn get_or_init[K : Hash + Eq, V](
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "get_or_default" {
-///   let map = @hashmap.of([("a", 1), ("b", 2)])
-///   inspect!(map.get_or_default("a", 0), content="1")
-///   inspect!(map.get_or_default("c", 0), content="0")
-/// }
-/// ```
-pub fn get_or_default[K : Hash + Eq, V](
+/// let map = @IndexMap.of([("a", 1), ("b", 2)])
+/// inspect(map.get_or_default("a", 0), content="1")
+/// inspect(map.get_or_default("c", 0), content="0")
+pub fn[K : Hash + Eq, V] get_or_default(
   self : T[K, V],
   key : K,
-  default : V
+  default : V,
 ) -> V {
   match self.get(key) {
     Some(v) => v
@@ -425,14 +395,10 @@ pub fn get_or_default[K : Hash + Eq, V](
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "contains" {
-///   let map = @hashmap.of([("a", 1), ("b", 2)])
-///   inspect!(map.contains("a"), content="true")
-///   inspect!(map.contains("c"), content="false")
-/// }
-/// ```
-pub fn contains[K : Hash + Eq, V](self : T[K, V], key : K) -> Bool {
+/// let map = @IndexMap.of([("a", 1), ("b", 2)])
+/// inspect(map.contains("a"), content="true")
+/// inspect(map.contains("c"), content="false")
+pub fn[K : Hash + Eq, V] contains(self : T[K, V], key : K) -> Bool {
   match self.get(key) {
     Some(_) => true
     None => false
@@ -452,17 +418,14 @@ pub fn contains[K : Hash + Eq, V](self : T[K, V], key : K) -> Bool {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "remove" {
-///   let map = @hashmap.of([("a", 1), ("b", 2)])
-///   map.remove("a")
-///   inspect!(map.get("a"), content="None")
-///   inspect!(map.size(), content="1")
-/// }
-/// ```
+/// let map = @IndexMap.of([("a", 1), ("b", 2)])
+/// map.remove("a")
+/// inspect(map.get("a"), content="None")
+/// inspect(map.size(), content="1")
+
 ///|
 /// Removes a key from the map.
-pub fn remove[K : Hash + Eq, V](self : T[K, V], key : K) -> Unit {
+pub fn[K : Hash + Eq, V] remove(self : T[K, V], key : K) -> Unit {
   if self.size == 0 {
     return
   }
@@ -526,6 +489,7 @@ pub fn remove[K : Hash + Eq, V](self : T[K, V], key : K) -> Unit {
     None => return // 键不存在，不执行任何操作
   }
 }
+
 ///|
 
 ///|
@@ -542,15 +506,11 @@ pub fn remove[K : Hash + Eq, V](self : T[K, V], key : K) -> Unit {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "of" {
-///   let map = @hashmap.of([(1, "one"), (2, "two")])
-///   inspect!(map.get(1), content="Some(\"one\")")
-///   inspect!(map.get(2), content="Some(\"two\")")
-/// }
-/// ```
+/// let map = @IndexMap.of([(1, "one"), (2, "two")])
+/// inspect(map.get(1), content="Some(\"one\")")
+/// inspect(map.get(2), content="Some(\"two\")")
 /// Create a map from a fixed array of key-value pairs
-pub fn of[K : Hash + Eq, V](arr : FixedArray[(K, V)]) -> T[K, V] {
+pub fn[K : Hash + Eq, V] of(arr : FixedArray[(K, V)]) -> T[K, V] {
   let map = new(capacity=arr.length())
   for i in 0..<arr.length() {
     let (key, value) = arr[i]
@@ -562,8 +522,8 @@ pub fn of[K : Hash + Eq, V](arr : FixedArray[(K, V)]) -> T[K, V] {
 ///|
 test "of" {
   let m = of([(1, 2), (3, 4)])
-  inspect!(m.get(1), content="Some(2)")
-  inspect!(m.get(3), content="Some(4)")
+  inspect(m.get(1), content="Some(2)")
+  inspect(m.get(3), content="Some(4)")
 }
 
 ///|
@@ -580,39 +540,36 @@ test "of" {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "arbitrary" {
-///   let samples : Array[@hashmap.T[Int, String]] = @quickcheck.samples(5)
-///   inspect!(samples.length(), content="5")
-/// }
-/// ```
+/// let samples : Array[@IndexMap.T[Int, String]] = @quickcheck.samples(5)
+/// inspect(samples.length(), content="5")
 pub impl[K : @quickcheck.Arbitrary + Hash + Eq, V : @quickcheck.Arbitrary] @quickcheck.Arbitrary for T[
   K,
   V,
 ] with arbitrary(size, rs) {
   let m = new()
-  (@quickcheck.Arbitrary::arbitrary(size, rs) : Iter[(K, V)]).each(fn {
-    (k, v) => m.set(k, v)
+  (@quickcheck.Arbitrary::arbitrary(size, rs) : Iter[(K, V)]).each(fn(kv) {
+    let (k, v) = kv
+    m.set(k, v)
   })
   m
 }
 
 ///|
-priv type MyString String derive(Eq)
+priv struct MyString(String) derive(Eq)
 
 ///|
 impl Hash for MyString with hash(self) {
-  self._.length()
+  self.inner().length()
 }
 
 ///|
 impl Hash for MyString with hash_combine(self, hasher) {
-  hasher.combine_string(self._)
+  hasher.combine_string(self.inner())
 }
 
 ///|
 impl Show for MyString with output(self, logger) {
-  logger.write_string(self._)
+  logger.write_string(self.inner())
 }
 
 ///|
@@ -631,17 +588,17 @@ test "MyString hash_combine implementation" {
   let result = map.get(str2)
 
   // 验证结果
-  assert_eq!(result, Some("value1"))
+  assert_eq(result, Some("value1"))
 
   // 确认只有一个元素（即两个MyString哈希到同一个桶）
-  assert_eq!(map.size(), 1)
+  assert_eq(map.size(), 1)
 
   // 测试哈希值本身是否一致
-  assert_eq!(str1.hash(), str2.hash())
+  assert_eq(str1.hash(), str2.hash())
 
   // 测试不同内容的字符串是否正确区分
   let str3 = "different_string"
-  assert_true!(str1.hash() != str3.hash())
+  assert_true(str1.hash() != str3.hash())
 }
 
 ///|
@@ -688,7 +645,7 @@ test "remove" {
   m.set("abc", 3)
   m.set("abcdef", 6)
   m.remove("ab")
-  assert_eq!(m.size(), 5)
+  assert_eq(m.size(), 5)
   // inspect!(
   //    m.debug_entries(),
   //  content="_,(0,a,1),(0,bc,2),(1,cd,2),(1,abc,3),_,(0,abcdef,6),_,_,_,_,_,_,_,_,_",
@@ -702,7 +659,7 @@ test "remove_unexist_key" {
   m.set("ab", 2)
   m.set("abc", 3)
   m.remove("d")
-  assert_eq!(m.size(), 3)
+  assert_eq(m.size(), 3)
   // inspect!(m.debug_entries(), content="_,(0,a,1),(0,ab,2),(0,abc,3),_,_,_,_")
 }
 
@@ -714,19 +671,19 @@ test "clear" {
   m.clear()
 
   // 验证基本属性
-  assert_eq!(m.size(), 0)
-  assert_eq!(m.capacity(), old_capacity) // 容量应保持不变
+  assert_eq(m.size(), 0)
+  assert_eq(m.capacity(), old_capacity) // 容量应保持不变
 
   // 验证内部结构已正确清空
-  assert_eq!(m.core.entries.length(), 0) // entries 应为空数组
-  assert_eq!(m.core.head, -1) // 头指针应为 -1
-  assert_eq!(m.core.tail, -1) // 尾指针应为 -1
-  assert_eq!(m.core.position_to_idx.length(), 0) // 位置映射应为空
+  assert_eq(m.core.entries.length(), 0) // entries 应为空数组
+  assert_eq(m.core.head, -1) // 头指针应为 -1
+  assert_eq(m.core.tail, -1) // 尾指针应为 -1
+  assert_eq(m.core.position_to_idx.length(), 0) // 位置映射应为空
 
   // 验证功能正确性
-  assert_eq!(m.get("a"), None)
-  assert_eq!(m.get("b"), None)
-  assert_eq!(m.get("c"), None)
+  assert_eq(m.get("a"), None)
+  assert_eq(m.get("b"), None)
+  assert_eq(m.get("c"), None)
 }
 
 ///|
@@ -737,10 +694,10 @@ test "grow" {
   m.set("C++", 3)
   m.set("Java", 4)
   m.set("Scala", 5)
-  inspect!(m.capacity(), content="8")
+  inspect(m.capacity(), content="8")
   m.set("Julia", 5)
-  assert_eq!(m.size(), 6)
-  inspect!(m.capacity(), content="16")
+  assert_eq(m.size(), 6)
+  inspect(m.capacity(), content="16")
   println(m.debug_entries())
   // inspect!(
   //   m.debug_entries(),
@@ -750,30 +707,30 @@ test "grow" {
 
 ///|
 /// Returns the number of key-value pairs in the map.
-pub fn size[K, V](self : T[K, V]) -> Int {
+pub fn[K, V] size(self : T[K, V]) -> Int {
   self.size
 }
 
 ///|
-pub fn capacity[K, V](self : T[K, V]) -> Int {
+pub fn[K, V] capacity(self : T[K, V]) -> Int {
   self.capacity
 }
 
 ///|
 /// Check if the map is empty.
-pub fn is_empty[K, V](self : T[K, V]) -> Bool {
+pub fn[K, V] is_empty(self : T[K, V]) -> Bool {
   self.size == 0
 }
 
 ///|
 /// Check if the map contains a key.
-pub fn contains_key[K : Hash + Eq, V](self : T[K, V], key : K) -> Bool {
+pub fn[K : Hash + Eq, V] contains_key(self : T[K, V], key : K) -> Bool {
   self.key_to_idx.contains(key)
 }
 
 ///|
 /// Clears the map, removing all key-value pairs.
-pub fn clear[K, V](self : T[K, V]) -> Unit {
+pub fn[K, V] clear(self : T[K, V]) -> Unit {
   self.core.hash_to_idx.clear()
   self.core.entries = []
   self.core.head = -1
@@ -786,9 +743,10 @@ pub fn clear[K, V](self : T[K, V]) -> Unit {
 
 ///|
 /// Convert the map to an array of key-value pairs
+
 ///|
 /// Convert the map to an array of key-value pairs
-pub fn to_array[K, V](self : T[K, V]) -> Array[(K, V)] {
+pub fn[K, V] to_array(self : T[K, V]) -> Array[(K, V)] {
   if self.size == 0 {
     return []
   }
@@ -808,7 +766,7 @@ pub fn to_array[K, V](self : T[K, V]) -> Array[(K, V)] {
 
 ///|
 /// Grow the map capacity
-fn grow[K : Hash + Eq, V](self : T[K, V]) -> Unit {
+fn[K : Hash + Eq, V] grow(self : T[K, V]) -> Unit {
   // 保存旧数据
   let old_entries = self.core.entries
   let old_head = self.core.head
@@ -839,7 +797,7 @@ fn grow[K : Hash + Eq, V](self : T[K, V]) -> Unit {
 }
 
 ///|
-fn debug_entries[K : Show, V : Show](self : T[K, V]) -> String {
+fn[K : Show, V : Show] debug_entries(self : T[K, V]) -> String {
   let mut s = ""
   let mut current = self.core.head
   let mut i = 0
@@ -867,16 +825,12 @@ fn debug_entries[K : Show, V : Show](self : T[K, V]) -> String {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "iter" {
-///   let map = @IndexMap.of([(1, "one"), (2, "two")])
-///   let pairs = map.iter().to_array()
-///   inspect!(pairs.length(), content="2")
-///   inspect!(pairs[0], content="(1, \"one\")")
-///   inspect!(pairs[1], content="(2, \"two\")")
-/// }
-/// ```
-pub fn iter[K, V](self : T[K, V]) -> Iter[(K, V)] {
+/// let map = @IndexMap.of([(1, "one"), (2, "two")])
+/// let pairs = map.iter().to_array()
+/// inspect(pairs.length(), content="2")
+/// inspect(pairs[0], content="(1, \"one\")")
+/// inspect(pairs[1], content="(2, \"two\")")
+pub fn[K, V] iter(self : T[K, V]) -> Iter[(K, V)] {
   Iter::new(fn(yield_) {
     let mut current = self.core.head
     while current != -1 {
@@ -903,15 +857,11 @@ pub fn iter[K, V](self : T[K, V]) -> Iter[(K, V)] {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "iter2" {
-///   let map = @IndexMap.of([(1, "one"), (2, "two")])
-///   let mut sum = 0
-///   map.iter2().each(fn(k, _) { sum = sum + k })
-///   inspect!(sum, content="3")
-/// }
-/// ```
-pub fn iter2[K, V](self : T[K, V]) -> Iter2[K, V] {
+/// let map = @IndexMap.of([(1, "one"), (2, "two")])
+/// let mut sum = 0
+/// map.iter2().each(fn(k, _) { sum = sum + k })
+/// inspect(sum, content="3")
+pub fn[K, V] iter2(self : T[K, V]) -> Iter2[K, V] {
   Iter2::new(fn(yield_) {
     let mut current = self.core.head
     while current != -1 {
@@ -939,24 +889,20 @@ pub fn iter2[K, V](self : T[K, V]) -> Iter2[K, V] {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "from_iter" {
-///   let arr = [(1, "one"), (2, "two")]
-///   let iter = Iter::new(fn(yield_) {
-///     for pair in arr {
-///       if yield_(pair) == IterEnd {
-///         break IterEnd
-///       }
-///     } else {
-///       IterContinue
+/// let arr = [(1, "one"), (2, "two")]
+/// let iter = Iter::new(fn(yield_) {
+///   for pair in arr {
+///     if yield_(pair) == IterEnd {
+///       break IterEnd
 ///     }
-///   })
-///   let map = @IndexMap.from_iter(iter)
-///   inspect!(map.get(1), content="Some(\"one\")")
-///   inspect!(map.get(2), content="Some(\"two\")")
-/// }
-/// ```
-pub fn from_iter[K : Hash + Eq, V](iter : Iter[(K, V)]) -> T[K, V] {
+///   } else {
+///     IterContinue
+///   }
+/// })
+/// let map = @IndexMap.from_iter(iter)
+/// inspect(map.get(1), content="Some(\"one\")")
+/// inspect(map.get(2), content="Some(\"two\")")
+pub fn[K : Hash + Eq, V] from_iter(iter : Iter[(K, V)]) -> T[K, V] {
   let m = new()
   iter.each(fn(e) { m.set(e.0, e.1) })
   m
@@ -975,17 +921,13 @@ pub fn from_iter[K : Hash + Eq, V](iter : Iter[(K, V)]) -> T[K, V] {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "T::from_iter" {
-///   let pairs = [(1, "one"), (2, "two")]
-///   let map = @IndexMap.from_iter(pairs.iter())
-///   inspect!(map.get(1), content="Some(\"one\")")
-///   inspect!(map.get(2), content="Some(\"two\")")
-/// }
-/// ```
+/// let pairs = [(1, "one"), (2, "two")]
+/// let map = @IndexMap.from_iter(pairs.iter())
+/// inspect(map.get(1), content="Some(\"one\")")
+/// inspect(map.get(2), content="Some(\"two\")")
 ///
 #deprecated("use `@IndexMap.from_iter` instead")
-pub fn T::from_iter[K : Hash + Eq, V](iter : Iter[(K, V)]) -> T[K, V] {
+pub fn[K : Hash + Eq, V] T::from_iter(iter : Iter[(K, V)]) -> T[K, V] {
   from_iter(iter)
 }
 
@@ -1001,15 +943,11 @@ pub fn T::from_iter[K : Hash + Eq, V](iter : Iter[(K, V)]) -> T[K, V] {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "each" {
-///   let map = @IndexMap.of([(1, "one"), (2, "two")])
-///   let mut result = ""
-///   map.each(fn(k, v) { result = result + "\{k}:\{v}," })
-///   inspect!(result, content="1:one,2:two,")
-/// }
-/// ```
-pub fn each[K, V](self : T[K, V], f : (K, V) -> Unit) -> Unit {
+/// let map = @IndexMap.of([(1, "one"), (2, "two")])
+/// let mut result = ""
+/// map.each(fn(k, v) { result = result + "\{k}:\{v}," })
+/// inspect(result, content="1:one,2:two,")
+pub fn[K, V] each(self : T[K, V], f : (K, V) -> Unit) -> Unit {
   let mut current = self.core.head
   while current != -1 {
     let entry = self.core.entries[current]
@@ -1033,16 +971,12 @@ pub fn each[K, V](self : T[K, V], f : (K, V) -> Unit) -> Unit {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "eachi" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-///   let mut result = 0
-///   map.eachi(fn(i, k, _) { if k == "b" { result = i } })
-///   // "b" is at index 1
-///   inspect!(result, content="1")
-/// }
-/// ```
-pub fn eachi[K, V](self : T[K, V], f : (Int, K, V) -> Unit) -> Unit {
+/// let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+/// let mut result = 0
+/// map.eachi(fn(i, k, _) { if k == "b" { result = i } })
+/// // "b" is at index 1
+/// inspect(result, content="1")
+pub fn[K, V] eachi(self : T[K, V], f : (Int, K, V) -> Unit) -> Unit {
   let mut current = self.core.head
   let mut idx = 0
   while current != -1 {
@@ -1063,14 +997,10 @@ pub fn eachi[K, V](self : T[K, V], f : (Int, K, V) -> Unit) -> Unit {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "show" {
-///   let map = @IndexMap.of([(1, "one"), (2, "two")])
-///   inspect!(map, content=
-///   #|IndexMap::of([(1, "one"), (2, "two")])
+/// let map = @IndexMap.of([(1, "one"), (2, "two")])
+/// inspect(map, content=
+/// #|IndexMap::of([(1, "one"), (2, "two")])
 /// )
-/// }
-/// ```
 pub impl[K : Show, V : Show] Show for T[K, V] with output(self, logger) {
   logger.write_string("IndexMap::of([")
   self.eachi(fn(i, k, v) {
@@ -1082,7 +1012,7 @@ pub impl[K : Show, V : Show] Show for T[K, V] with output(self, logger) {
     ..write_object(k)
     ..write_string(", ")
     ..write_object(v)
-    .write_string(")")
+    ..write_string(")")
   })
   logger.write_string("])")
 }
@@ -1100,15 +1030,11 @@ pub impl[K : Show, V : Show] Show for T[K, V] with output(self, logger) {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "index_of" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-///   inspect!(map.index_of("a"), content="Some(0)")
-///   inspect!(map.index_of("b"), content="Some(1)")
-///   inspect!(map.index_of("d"), content="None")
-/// }
-/// ```
-pub fn index_of[K : Hash + Eq, V](self : T[K, V], key : K) -> Int? {
+/// let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+/// inspect(map.index_of("a"), content="Some(0)")
+/// inspect(map.index_of("b"), content="Some(1)")
+/// inspect(map.index_of("d"), content="None")
+pub fn[K : Hash + Eq, V] index_of(self : T[K, V], key : K) -> Int? {
   // 先检查键是否存在
   match self.key_to_idx.get(key) {
     Some(bucket_idx) =>
@@ -1130,13 +1056,9 @@ pub fn index_of[K : Hash + Eq, V](self : T[K, V], key : K) -> Int? {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "first" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2)])
-///   inspect!(map.first(), content="Some((\"a\", 1))")
-/// }
-/// ```
-pub fn first[K, V](self : T[K, V]) -> (K, V)? {
+/// let map = @IndexMap.of([("a", 1), ("b", 2)])
+/// inspect(map.first(), content="Some((\"a\", 1))")
+pub fn[K, V] first(self : T[K, V]) -> (K, V)? {
   if self.size == 0 || self.core.head == -1 {
     return None
   }
@@ -1156,13 +1078,9 @@ pub fn first[K, V](self : T[K, V]) -> (K, V)? {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "last" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2)])
-///   inspect!(map.last(), content="Some((\"b\", 2))")
-/// }
-/// ```
-pub fn last[K, V](self : T[K, V]) -> (K, V)? {
+/// let map = @IndexMap.of([("a", 1), ("b", 2)])
+/// inspect(map.last(), content="Some((\"b\", 2))")
+pub fn[K, V] last(self : T[K, V]) -> (K, V)? {
   if self.size == 0 || self.core.tail == -1 {
     return None
   }
@@ -1181,13 +1099,9 @@ pub fn last[K, V](self : T[K, V]) -> (K, V)? {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "keys" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-///   inspect!(map.keys(), content=["a", "b", "c"])
-/// }
-/// ```
-pub fn keys[K, V](self : T[K, V]) -> Array[K] {
+/// let map = @IndexMap.of([('a', 1), ('b', 2), ('c', 3)])
+/// inspect(map.keys(), content=['a', 'b', 'c'])
+pub fn[K, V] keys(self : T[K, V]) -> Array[K] {
   if self.size == 0 {
     return []
   }
@@ -1211,13 +1125,9 @@ pub fn keys[K, V](self : T[K, V]) -> Array[K] {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "values" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-///   inspect!(map.values(), content=[1, 2, 3])
-/// }
-/// ```
-pub fn values[K, V](self : T[K, V]) -> Array[V] {
+/// let map = @IndexMap.of([('a', 1), ('b', 2), ('c', 3)])
+/// inspect(map.values(), content=[1, 2, 3])
+pub fn[K, V] values(self : T[K, V]) -> Array[V] {
   if self.size == 0 {
     return []
   }
@@ -1241,13 +1151,9 @@ pub fn values[K, V](self : T[K, V]) -> Array[V] {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "to_json_string" {
-///   let map = @IndexMap.of([(1, 10), (2, 20), (3, 30)])
-///   inspect!(map.to_json_string(), content="{\"1\":10,\"2\":20,\"3\":30}")
-/// }
-/// ```
-pub fn to_json_string[K : Show, V : ToJson](self : T[K, V]) -> String {
+/// let map = @IndexMap.of([(1, 10), (2, 20), (3, 30)])
+/// inspect(map.to_json_string(), content="{\"1\":10,\"2\":20,\"3\":30}")
+pub fn[K : Show, V : ToJson] to_json_string(self : T[K, V]) -> String {
   // 直接构建JSON字符串
   let mut result = "{"
   let mut first = true
@@ -1282,7 +1188,7 @@ pub impl[K : Show, V : ToJson] ToJson for T[K, V] with to_json(self) {
     object[entry.key.to_string()] = entry.value.to_json()
     current = entry.next
   }
-  Object(object)
+  Json::object(object)
 }
 
 ///|
@@ -1297,15 +1203,11 @@ pub impl[K : Show, V : ToJson] ToJson for T[K, V] with to_json(self) {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "pop" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-///   inspect!(map.pop(), content="Some((\"c\", 3))")
-///   inspect!(map.size(), content="2")
-///   inspect!(map.get("c"), content="None")
-/// }
-/// ```
-pub fn pop[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? {
+/// let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+/// inspect(map.pop(), content="Some((\"c\", 3))")
+/// inspect(map.size(), content="2")
+/// inspect(map.get("c"), content="None")
+pub fn[K : Hash + Eq, V] pop(self : T[K, V]) -> (K, V)? {
   if self.size == 0 || self.core.tail == -1 {
     return None
   }
@@ -1355,15 +1257,11 @@ pub fn pop[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "shift" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-///   inspect!(map.shift(), content="Some((\"a\", 1))")
-///   inspect!(map.size(), content="2")
-///   inspect!(map.get("a"), content="None")
-/// }
-/// ```
-pub fn shift[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? {
+/// let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
+/// inspect(map.shift(), content="Some((\"a\", 1))")
+/// inspect(map.size(), content="2")
+/// inspect(map.get("a"), content="None")
+pub fn[K : Hash + Eq, V] shift(self : T[K, V]) -> (K, V)? {
   if self.size == 0 || self.core.head == -1 {
     return None
   }
@@ -1426,14 +1324,10 @@ pub fn shift[K : Hash + Eq, V](self : T[K, V]) -> (K, V)? {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "get_first" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2)])
-///   inspect!(map.get_first(), content="Some((\"a\", 1))")
-///   inspect!(map.size(), content="2")  // 元素没有被移除
-/// }
-/// ```
-pub fn get_first[K, V](self : T[K, V]) -> (K, V)? {
+/// let map = @IndexMap.of([("a", 1), ("b", 2)])
+/// inspect(map.get_first(), content="Some((\"a\", 1))")
+/// inspect(map.size(), content="2")  // 元素没有被移除
+pub fn[K, V] get_first(self : T[K, V]) -> (K, V)? {
   if self.size == 0 || self.core.head == -1 {
     return None
   }
@@ -1453,14 +1347,10 @@ pub fn get_first[K, V](self : T[K, V]) -> (K, V)? {
 ///
 /// Example:
 ///
-/// ```moonbit
-/// test "get_last" {
-///   let map = @IndexMap.of([("a", 1), ("b", 2)])
-///   inspect!(map.get_last(), content="Some((\"b\", 2))")
-///   inspect!(map.size(), content="2")  // 元素没有被移除
-/// }
-/// ```
-pub fn get_last[K, V](self : T[K, V]) -> (K, V)? {
+/// let map = @IndexMap.of([("a", 1), ("b", 2)])
+/// inspect(map.get_last(), content="Some((\"b\", 2))")
+/// inspect(map.size(), content="2")  // 元素没有被移除
+pub fn[K, V] get_last(self : T[K, V]) -> (K, V)? {
   if self.size == 0 || self.core.tail == -1 {
     return None
   }
@@ -1469,7 +1359,7 @@ pub fn get_last[K, V](self : T[K, V]) -> (K, V)? {
 }
 
 ///|
-pub fn sort_by[K, V](self : T[K, V], compare : (K, V, K, V) -> Int) -> Unit {
+pub fn[K, V] sort_by(self : T[K, V], compare : (K, V, K, V) -> Int) -> Unit {
   if self.size <= 1 {
     return // 不需要排序
   }
@@ -1519,17 +1409,17 @@ pub fn sort_by[K, V](self : T[K, V], compare : (K, V, K, V) -> Int) -> Unit {
 }
 
 ///|
-pub fn sort_by_key[K, V](self : T[K, V], compare : (K, K) -> Int) -> Unit {
+pub fn[K, V] sort_by_key(self : T[K, V], compare : (K, K) -> Int) -> Unit {
   self.sort_by(fn(k1, _, k2, _) { compare(k1, k2) })
 }
 
 ///|
-pub fn sort_by_value[K, V](self : T[K, V], compare : (V, V) -> Int) -> Unit {
+pub fn[K, V] sort_by_value(self : T[K, V], compare : (V, V) -> Int) -> Unit {
   self.sort_by(fn(_, v1, _, v2) { compare(v1, v2) })
 }
 
 ///|
-pub fn sort[K : Compare, V](self : T[K, V]) -> Unit {
+pub fn[K : Compare, V] sort(self : T[K, V]) -> Unit {
   self.sort_by_key(fn(k1, k2) {
     if k1 < k2 {
       -1
@@ -1542,7 +1432,7 @@ pub fn sort[K : Compare, V](self : T[K, V]) -> Unit {
 }
 
 ///|
-pub fn reverse[K, V](self : T[K, V]) -> Unit {
+pub fn[K, V] reverse(self : T[K, V]) -> Unit {
   if self.size <= 1 {
     return // 不需要反转
   }
@@ -1580,9 +1470,9 @@ pub fn reverse[K, V](self : T[K, V]) -> Unit {
 }
 
 ///|
-pub fn sorted_by[K : Hash + Eq, V](
+pub fn[K : Hash + Eq, V] sorted_by(
   self : T[K, V],
-  compare : (K, V, K, V) -> Int
+  compare : (K, V, K, V) -> Int,
 ) -> T[K, V] {
   // 创建新映射
   let result = new(capacity=self.size)
@@ -1607,23 +1497,23 @@ pub fn sorted_by[K : Hash + Eq, V](
 }
 
 ///|
-pub fn sorted_by_key[K : Hash + Eq, V](
+pub fn[K : Hash + Eq, V] sorted_by_key(
   self : T[K, V],
-  compare : (K, K) -> Int
+  compare : (K, K) -> Int,
 ) -> T[K, V] {
-  self.sorted_by(fn(k1, v1, k2, v2) { compare(k1, k2) })
+  self.sorted_by(fn(k1, _, k2, _) { compare(k1, k2) })
 }
 
 ///|
-pub fn sorted_by_value[K : Hash + Eq, V](
+pub fn[K : Hash + Eq, V] sorted_by_value(
   self : T[K, V],
-  compare : (V, V) -> Int
+  compare : (V, V) -> Int,
 ) -> T[K, V] {
-  self.sorted_by(fn(k1, v1, k2, v2) { compare(v1, v2) })
+  self.sorted_by(fn(_, v1, _, v2) { compare(v1, v2) })
 }
 
 ///|
-pub fn sorted[K : Hash + Eq + Compare, V](self : T[K, V]) -> T[K, V] {
+pub fn[K : Hash + Eq + Compare, V] sorted(self : T[K, V]) -> T[K, V] {
   self.sorted_by_key(fn(k1, k2) {
     if k1 < k2 {
       -1
@@ -1636,7 +1526,7 @@ pub fn sorted[K : Hash + Eq + Compare, V](self : T[K, V]) -> T[K, V] {
 }
 
 ///|
-pub fn sorted_by_values[K : Hash + Eq, V : Compare](self : T[K, V]) -> T[K, V] {
+pub fn[K : Hash + Eq, V : Compare] sorted_by_values(self : T[K, V]) -> T[K, V] {
   self.sorted_by_value(fn(v1, v2) {
     if v1 < v2 {
       -1
@@ -1649,7 +1539,7 @@ pub fn sorted_by_values[K : Hash + Eq, V : Compare](self : T[K, V]) -> T[K, V] {
 }
 
 ///|
-pub fn reversed[K : Hash + Eq, V](self : T[K, V]) -> T[K, V] {
+pub fn[K : Hash + Eq, V] reversed(self : T[K, V]) -> T[K, V] {
   // 创建新映射
   let result = new(capacity=self.size)
 

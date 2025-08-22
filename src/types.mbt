@@ -20,7 +20,7 @@ priv struct Bucket[K, V] {
   mut value : V // 值
   mut next : Int // 链表后继索引，-1表示没有后继
   mut prev : Int // 链表前驱索引，-1表示没有前驱
-} derive(Show)
+}
 
 ///|
 /// IndexMap核心结构，包含所有数据组织功能
@@ -31,7 +31,7 @@ priv struct IndexMapCore[K, V] {
   mut tail : Int // 链表尾节点索引，-1表示空链表
   mut position_to_idx : Array[Int] // 位置到桶索引的映射，支持O(1)的索引访问
   mut idx_to_position : @hashmap.T[Int, Int] // 桶索引到位置的映射，使index_of操作为O(1)
-} derive(Show)
+}
 
 /// A mutable indexed hash map.
 ///
@@ -45,14 +45,12 @@ priv struct IndexMapCore[K, V] {
 ///
 /// # Example
 ///
-/// ```
-/// let map = @indexmap.of([(3, "three"), (8, "eight"), (1, "one")])
-/// assert_eq!(map.get(2), None)
-/// assert_eq!(map.get(3), Some("three"))
+/// let map = @IndexMap.of([(3, "three"), (8, "eight"), (1, "one")])
+/// assert_eq(map.get(2), None)
+/// assert_eq(map.get(3), Some("three"))
 /// map.set(3, "updated")
-/// assert_eq!(map.get(3), Some("updated"))
-/// assert_eq!(map.get_at(0), (3, "updated"))  // Access by insertion order
-/// ```
+/// assert_eq(map.get(3), Some("updated"))
+/// assert_eq(map.get_at(0), (3, "updated"))  // Access by insertion order
 struct T[K, V] {
   core : IndexMapCore[K, V] // 包含核心数据结构
   mut size : Int // 元素数量
