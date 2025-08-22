@@ -45,14 +45,12 @@ priv struct IndexMapCore[K, V] {
 ///
 /// # Example
 ///
-/// ```
-/// let map = @indexmap.of([(3, "three"), (8, "eight"), (1, "one")])
-/// assert_eq!(map.get(2), None)
-/// assert_eq!(map.get(3), Some("three"))
+/// let map = @IndexMap.of([(3, "three"), (8, "eight"), (1, "one")])
+/// assert_eq(map.get(2), None)
+/// assert_eq(map.get(3), Some("three"))
 /// map.set(3, "updated")
-/// assert_eq!(map.get(3), Some("updated"))
-/// assert_eq!(map.get_at(0), (3, "updated"))  // Access by insertion order
-/// ```
+/// assert_eq(map.get(3), Some("updated"))
+/// assert_eq(map.get_at(0), (3, "updated"))  // Access by insertion order
 struct T[K, V] {
   core : IndexMapCore[K, V] // 包含核心数据结构
   mut size : Int // 元素数量
