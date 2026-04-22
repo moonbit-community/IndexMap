@@ -24,7 +24,7 @@ fn calc_grow_threshold(capacity : Int) -> Int {
 /// let map : @IndexMap.T[String, Int] = @IndexMap.new(capacity=16)
 /// inspect(map.capacity(), content="16")
 /// inspect(map.is_empty(), content="true")
-pub fn[K, V] new(capacity~ : Int = Default_init_capacity) -> T[K, V] {
+pub fn[K, V] new(capacity? : Int = Default_init_capacity) -> T[K, V] {
   {
     core: {
       hash_to_idx: @hashmap.new(),
@@ -154,9 +154,11 @@ pub fn[K : Hash + Eq, V] T::set(self : T[K, V], key : K, value : V) -> Unit {
   }
 }
 
-///|///|
+///|
+//////|
 /// Sets a key-value pair with a pre-computed hash
-pub fn[K : Hash + Eq, V] T::set_with_hash(self : T[K, V],
+pub fn[K : Hash + Eq, V] T::set_with_hash(
+  self : T[K, V],
   key : K,
   value : V,
   hash : Int,
@@ -337,7 +339,8 @@ pub fn[K : Hash + Eq, V] T::op_get(self : T[K, V], key : K) -> V? {
 /// let value = map.get_or_init("key", fn() { 42 })
 /// inspect(value, content="42")
 /// inspect(map.get("key"), content="Some(42)")
-pub fn[K : Hash + Eq, V] T::get_or_init(self : T[K, V],
+pub fn[K : Hash + Eq, V] T::get_or_init(
+  self : T[K, V],
   key : K,
   init : () -> V,
 ) -> V {
@@ -370,7 +373,8 @@ pub fn[K : Hash + Eq, V] T::get_or_init(self : T[K, V],
 /// let map = @IndexMap.of([("a", 1), ("b", 2)])
 /// inspect(map.get_or_default("a", 0), content="1")
 /// inspect(map.get_or_default("c", 0), content="0")
-pub fn[K : Hash + Eq, V] T::get_or_default(self : T[K, V],
+pub fn[K : Hash + Eq, V] T::get_or_default(
+  self : T[K, V],
   key : K,
   default : V,
 ) -> V {
@@ -1465,7 +1469,8 @@ pub fn[K, V] T::reverse(self : T[K, V]) -> Unit {
 }
 
 ///|
-pub fn[K : Hash + Eq, V] T::sorted_by(self : T[K, V],
+pub fn[K : Hash + Eq, V] T::sorted_by(
+  self : T[K, V],
   compare : (K, V, K, V) -> Int,
 ) -> T[K, V] {
   // 创建新映射
@@ -1491,14 +1496,16 @@ pub fn[K : Hash + Eq, V] T::sorted_by(self : T[K, V],
 }
 
 ///|
-pub fn[K : Hash + Eq, V] T::sorted_by_key(self : T[K, V],
+pub fn[K : Hash + Eq, V] T::sorted_by_key(
+  self : T[K, V],
   compare : (K, K) -> Int,
 ) -> T[K, V] {
   self.sorted_by(fn(k1, _, k2, _) { compare(k1, k2) })
 }
 
 ///|
-pub fn[K : Hash + Eq, V] T::sorted_by_value(self : T[K, V],
+pub fn[K : Hash + Eq, V] T::sorted_by_value(
+  self : T[K, V],
   compare : (V, V) -> Int,
 ) -> T[K, V] {
   self.sorted_by(fn(_, v1, _, v2) { compare(v1, v2) })
@@ -1518,7 +1525,9 @@ pub fn[K : Hash + Eq + Compare, V] T::sorted(self : T[K, V]) -> T[K, V] {
 }
 
 ///|
-pub fn[K : Hash + Eq, V : Compare] T::sorted_by_values(self : T[K, V]) -> T[K, V] {
+pub fn[K : Hash + Eq, V : Compare] T::sorted_by_values(
+  self : T[K, V],
+) -> T[K, V] {
   self.sorted_by_value(fn(v1, v2) {
     if v1 < v2 {
       -1

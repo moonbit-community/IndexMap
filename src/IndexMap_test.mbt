@@ -625,7 +625,7 @@ test "capacity_growth" {
   assert_eq(map.capacity(), 8) // 应该是原来的两倍
 
   // 验证所有元素仍然存在
-  for i in 0..=growth_threshold {
+  for i in 0..<=growth_threshold {
     if i == growth_threshold {
       assert_eq(map.get(i), Some("trigger growth"))
     } else {
