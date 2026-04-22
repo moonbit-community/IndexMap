@@ -523,36 +523,6 @@ test "IndexSet arbitrary" {
 }
 
 ///|
-struct Person {
-  name : String
-  age : Int
-} derive(Eq, Show)
-
-///|
-impl Compare for Person with compare(self, other) {
-  if self.age != other.age {
-    self.age - other.age // Sort by age
-  } else {
-    self.name.compare(other.name) // Then by name
-  }
-}
-
-///|
-fn get_score(scores : @sorted_map.T[Int, Int], student_id : Int) -> Int {
-  match scores.get(student_id) {
-    Some(score) => score
-    None => {
-      println(
-        "Student ID " +
-        student_id.to_string() +
-        " does not exist, returning default score",
-      )
-      0 // Default score
-    }
-  }
-}
-
-///|
 /// 测试键值更新功能
 test "update_existing_key" {
   let map : T[String, Int] = @IndexMap.new()
