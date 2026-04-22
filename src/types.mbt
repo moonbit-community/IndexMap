@@ -25,12 +25,12 @@ priv struct Bucket[K, V] {
 ///|
 /// IndexMap核心结构，包含所有数据组织功能
 priv struct IndexMapCore[K, V] {
-  mut hash_to_idx : @hashmap.T[Int, Int] // 哈希值到桶索引的映射
+  mut hash_to_idx : @hashmap.HashMap[Int, Int] // 哈希值到桶索引的映射
   mut entries : Array[Bucket[K, V]] // 数组：存储实际的键值对及其链表信息
   mut head : Int // 链表头节点索引，-1表示空链表
   mut tail : Int // 链表尾节点索引，-1表示空链表
   mut position_to_idx : Array[Int] // 位置到桶索引的映射，支持O(1)的索引访问
-  mut idx_to_position : @hashmap.T[Int, Int] // 桶索引到位置的映射，使index_of操作为O(1)
+  mut idx_to_position : @hashmap.HashMap[Int, Int] // 桶索引到位置的映射，使index_of操作为O(1)
 }
 
 /// A mutable indexed hash map.
@@ -56,5 +56,5 @@ struct T[K, V] {
   mut size : Int // 元素数量
   mut capacity : Int // 当前哈希表容量
   mut growAt : Int // 扩容阈值
-  mut key_to_idx : @hashmap.T[K, Int] // 键到索引的直接映射，用于O(1)查找
+  mut key_to_idx : @hashmap.HashMap[K, Int] // 键到索引的直接映射，用于O(1)查找
 }
