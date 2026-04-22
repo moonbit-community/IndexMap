@@ -559,17 +559,17 @@ priv struct MyString(String) derive(Eq)
 
 ///|
 impl Hash for MyString with hash(self) {
-  self.inner().length()
+  self.0.length()
 }
 
 ///|
 impl Hash for MyString with hash_combine(self, hasher) {
-  hasher.combine_string(self.inner())
+  hasher.combine_string(self.0)
 }
 
 ///|
 impl Show for MyString with output(self, logger) {
-  logger.write_string(self.inner())
+  logger.write_string(self.0)
 }
 
 ///|
@@ -831,16 +831,15 @@ fn[K : Show, V : Show] debug_entries(self : T[K, V]) -> String {
 /// inspect(pairs[0], content="(1, \"one\")")
 /// inspect(pairs[1], content="(2, \"two\")")
 pub fn[K, V] iter(self : T[K, V]) -> Iter[(K, V)] {
-  Iter::new(fn(yield_) {
-    let mut current = self.core.head
-    while current != -1 {
+  let mut current = self.core.head
+  Iter::new(fn() {
+    if current == -1 {
+      None
+    } else {
       let entry = self.core.entries[current]
-      if yield_((entry.key, entry.value)) == IterEnd {
-        return IterEnd
-      }
       current = entry.next
+      Some((entry.key, entry.value))
     }
-    IterContinue
   })
 }
 
@@ -862,16 +861,15 @@ pub fn[K, V] iter(self : T[K, V]) -> Iter[(K, V)] {
 /// map.iter2().each(fn(k, _) { sum = sum + k })
 /// inspect(sum, content="3")
 pub fn[K, V] iter2(self : T[K, V]) -> Iter2[K, V] {
-  Iter2::new(fn(yield_) {
-    let mut current = self.core.head
-    while current != -1 {
+  let mut current = self.core.head
+  Iter2::new(fn() {
+    if current == -1 {
+      None
+    } else {
       let entry = self.core.entries[current]
-      if yield_(entry.key, entry.value) == IterEnd {
-        return IterEnd
-      }
       current = entry.next
+      Some((entry.key, entry.value))
     }
-    IterContinue
   })
 }
 
