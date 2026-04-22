@@ -731,9 +731,9 @@ test "to_json_string_function" {
   assert_true(json.contains("\"city\":String(\"New York\")"))
 
   // 确认顺序正确（通过检查子字符串相对位置）
-  let name_pos = json.index_of("name")
-  let age_pos = json.index_of("age")
-  let city_pos = json.index_of("city")
+  let name_pos = json.find("name").unwrap()
+  let age_pos = json.find("age").unwrap()
+  let city_pos = json.find("city").unwrap()
   assert_true(name_pos < age_pos)
   assert_true(age_pos < city_pos)
 }
