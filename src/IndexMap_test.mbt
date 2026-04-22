@@ -461,7 +461,7 @@ test "sorted_by_key" {
 ///|
 test "sorted_by" {
   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
-  let sorted_map = map.sorted_by(fn(k1, v1, k2, v2) { k1.compare(k2) })
+  let sorted_map = map.sorted_by(fn(k1, _v1, k2, _v2) { k1.compare(k2) })
   assert_eq(sorted_map.keys(), ["a", "b", "c"])
   assert_eq(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
 }
@@ -504,7 +504,7 @@ test "sort_by_key" {
 test "sort_by" {
   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
   // 按键字母顺序排序
-  map.sort_by(fn(k1, v1, k2, v2) { k1.compare(k2) })
+  map.sort_by(fn(k1, _v1, k2, _v2) { k1.compare(k2) })
   let keys = map.keys()
   assert_eq(keys, ["a", "b", "c"])
 }
@@ -667,7 +667,7 @@ test "0 size" {
   assert_eq(map.values(), [])
   assert_eq(map.keys(), [])
   assert_eq(map.to_array(), [])
-  map.sort_by(fn(k1, v1, k2, v2) { k1.compare(k2) })
+  map.sort_by(fn(k1, _v1, k2, _v2) { k1.compare(k2) })
   assert_eq(map.to_array(), [])
   let mut test0 = map.shift()
   assert_eq(test0, None)
@@ -751,7 +751,7 @@ test "set_update_existing_key" {
 /// 测试reverse函数处理size <= 1的情况
 test "reverse_with_small_size" {
   // 测试空映射
-  let empty_map = @IndexMap.new()
+  let empty_map : @IndexMap.T[String, String] = @IndexMap.new()
   let empty_keys_before = empty_map.keys()
   empty_map.reverse()
   let empty_keys_after = empty_map.keys()
@@ -772,7 +772,7 @@ test "reverse_with_small_size" {
 struct TestKey {
   id : Int
   value : Int
-} derive(Eq, Show)
+} derive(Eq, Debug)
 
 ///|
 impl Hash for TestKey with hash_combine(self, hasher) {
@@ -963,7 +963,7 @@ test "iteration_early_termination" {
 
   // 使用each方法，在第二个元素后跳过处理
   let mut should_continue = true
-  map.each(fn(k, v) {
+  map.each(fn(_k, _v) {
     if should_continue {
       count += 1
       if count >= 2 {
@@ -1192,7 +1192,7 @@ test "set_with_hash_update_tail_next" {
 
   // 3. 可以通过第一个元素遍历到第二个元素
   let mut found_second = false
-  map.each(fn(k, v) {
+  map.each(fn(k, _v) {
     if k == key1 {
       // 检查下一个元素是否是key2
       let next_entry = map.get_at(1)
