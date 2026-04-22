@@ -109,7 +109,7 @@ test "is_empty" {
 }
 
 ///|
-test "iter" {
+test "iter_sequence" {
   let m = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
   let mut sum = 0
   m.each(fn(_k, v) { sum += v })
@@ -173,7 +173,7 @@ test "to_array" {
 }
 
 ///|
-test "get_nonexistent_key" {
+test "get_nonexistent_key_duplicate_1" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
@@ -181,7 +181,7 @@ test "get_nonexistent_key" {
 }
 
 ///|
-test "remove_nonexistent_key" {
+test "remove_nonexistent_key_duplicate_1" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
@@ -190,7 +190,7 @@ test "remove_nonexistent_key" {
 }
 
 ///|
-test "get_nonexistent_key" {
+test "get_nonexistent_key_duplicate_2" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
@@ -198,7 +198,7 @@ test "get_nonexistent_key" {
 }
 
 ///|
-test "remove_nonexistent_key" {
+test "remove_nonexistent_key_duplicate_2" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
@@ -207,7 +207,7 @@ test "remove_nonexistent_key" {
 }
 
 ///|
-test "get_nonexistent_key" {
+test "get_nonexistent_key_duplicate_3" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
@@ -215,7 +215,7 @@ test "get_nonexistent_key" {
 }
 
 ///|
-test "remove_nonexistent_key" {
+test "remove_nonexistent_key_duplicate_3" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
