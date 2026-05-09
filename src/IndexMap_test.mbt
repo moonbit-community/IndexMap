@@ -16,7 +16,7 @@
 test "new" {
   let m : @IndexMap.T[Int, Int] = @IndexMap.new()
   inspect(m.capacity(), content="8")
-  assert_eq(m.size(), 0)
+  @debug.assert_eq(m.size(), 0)
 }
 
 ///|
@@ -26,10 +26,10 @@ test "get" {
   m.set("b", 2)
   m.set("c", 3)
   println(m.size())
-  inspect(m.get("a"), content="Some(1)")
-  inspect(m.get("b"), content="Some(2)")
-  inspect(m.get("c"), content="Some(3)")
-  inspect(m.get("d"), content="None")
+  @debug.debug_inspect(m.get("a"), content="Some(1)")
+  @debug.debug_inspect(m.get("b"), content="Some(2)")
+  @debug.debug_inspect(m.get("c"), content="Some(3)")
+  @debug.debug_inspect(m.get("d"), content="None")
 }
 
 ///|
@@ -38,10 +38,10 @@ test "get_or_default" {
   m.set("a", 1)
   m.set("b", 2)
   m.set("c", 3)
-  assert_eq(m.get_or_default("a", 42), 1)
-  assert_eq(m.get_or_default("b", 42), 2)
-  assert_eq(m.get_or_default("c", 42), 3)
-  assert_eq(m.get_or_default("d", 42), 42)
+  @debug.assert_eq(m.get_or_default("a", 42), 1)
+  @debug.assert_eq(m.get_or_default("b", 42), 2)
+  @debug.assert_eq(m.get_or_default("c", 42), 3)
+  @debug.assert_eq(m.get_or_default("d", 42), 42)
 }
 
 ///|
@@ -49,8 +49,8 @@ test "op_set" {
   let m = @IndexMap.new()
   m["a"] = 1
   m["b"] = 2
-  assert_eq(m.get("a"), Some(1))
-  assert_eq(m.get("b"), Some(2))
+  @debug.assert_eq(m.get("a"), Some(1))
+  @debug.assert_eq(m.get("b"), Some(2))
 }
 
 ///|
@@ -58,9 +58,9 @@ test "op_get" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
-  assert_eq(m["a"], Some(1))
-  assert_eq(m["b"], Some(2))
-  assert_eq(m["c"], None)
+  @debug.assert_eq(m["a"], Some(1))
+  @debug.assert_eq(m["b"], Some(2))
+  @debug.assert_eq(m["c"], None)
 }
 
 ///|
@@ -68,44 +68,44 @@ test "set_update" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
-  assert_eq(m.get("a"), Some(1))
+  @debug.assert_eq(m.get("a"), Some(1))
   m.set("a", 2)
-  assert_eq(m.get("a"), Some(2))
+  @debug.assert_eq(m.get("a"), Some(2))
 }
 
 ///|
 test "contains" {
   let m = @IndexMap.new()
   m.set("a", 1)
-  assert_eq(m.contains("a"), true)
-  assert_eq(m.contains("b"), false)
+  @debug.assert_eq(m.contains("a"), true)
+  @debug.assert_eq(m.contains("b"), false)
 }
 
 ///|
 test "from_array" {
   let m = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-  assert_eq(m.get("a"), Some(1))
-  assert_eq(m.get("b"), Some(2))
-  assert_eq(m.get("c"), Some(3))
+  @debug.assert_eq(m.get("a"), Some(1))
+  @debug.assert_eq(m.get("b"), Some(2))
+  @debug.assert_eq(m.get("c"), Some(3))
 }
 
 ///|
 test "size" {
   let m = @IndexMap.new()
-  assert_eq(m.size(), 0)
+  @debug.assert_eq(m.size(), 0)
   m.set("a", 1)
-  assert_eq(m.size(), 1)
+  @debug.assert_eq(m.size(), 1)
 }
 
 ///|
 test "is_empty" {
   let m = @IndexMap.new()
-  assert_eq(m.is_empty(), true)
+  @debug.assert_eq(m.is_empty(), true)
   m.set("a", 1)
-  assert_eq(m.is_empty(), false)
+  @debug.assert_eq(m.is_empty(), false)
   m.remove("a")
   println(m.size())
-  assert_eq(m.is_empty(), true)
+  @debug.assert_eq(m.is_empty(), true)
 }
 
 ///|
@@ -113,7 +113,7 @@ test "iter_sequence" {
   let m = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
   let mut sum = 0
   m.each(fn(_k, v) { sum += v })
-  assert_eq(sum, 6)
+  @debug.assert_eq(sum, 6)
 }
 
 ///|
@@ -125,8 +125,8 @@ test "iteri" {
     s += i.to_string()
     sum += v
   })
-  assert_eq(s, "012")
-  assert_eq(sum, 6)
+  @debug.assert_eq(s, "012")
+  @debug.assert_eq(sum, 6)
 }
 
 ///|
@@ -177,7 +177,7 @@ test "get_nonexistent_key_duplicate_1" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
-  inspect(m.get("c"), content="None")
+  @debug.debug_inspect(m.get("c"), content="None")
 }
 
 ///|
@@ -186,7 +186,7 @@ test "remove_nonexistent_key_duplicate_1" {
   m.set("a", 1)
   m.set("b", 2)
   m.remove("c")
-  assert_eq(m.size(), 2)
+  @debug.assert_eq(m.size(), 2)
 }
 
 ///|
@@ -194,7 +194,7 @@ test "get_nonexistent_key_duplicate_2" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
-  inspect(m.get("c"), content="None")
+  @debug.debug_inspect(m.get("c"), content="None")
 }
 
 ///|
@@ -203,7 +203,7 @@ test "remove_nonexistent_key_duplicate_2" {
   m.set("a", 1)
   m.set("b", 2)
   m.remove("c")
-  assert_eq(m.size(), 2)
+  @debug.assert_eq(m.size(), 2)
 }
 
 ///|
@@ -211,7 +211,7 @@ test "get_nonexistent_key_duplicate_3" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
-  inspect(m.get("c"), content="None")
+  @debug.debug_inspect(m.get("c"), content="None")
 }
 
 ///|
@@ -220,7 +220,7 @@ test "remove_nonexistent_key_duplicate_3" {
   m.set("a", 1)
   m.set("b", 2)
   m.remove("c")
-  assert_eq(m.size(), 2)
+  @debug.assert_eq(m.size(), 2)
 }
 
 ///|
@@ -228,7 +228,7 @@ test "get_nonexistent_key" {
   let m = @IndexMap.new()
   m.set("a", 1)
   m.set("b", 2)
-  inspect(m.get("c"), content="None")
+  @debug.debug_inspect(m.get("c"), content="None")
 }
 
 ///|
@@ -237,7 +237,7 @@ test "remove_nonexistent_key" {
   m.set("a", 1)
   m.set("b", 2)
   m.remove("c")
-  assert_eq(m.size(), 2)
+  @debug.assert_eq(m.size(), 2)
 }
 
 ///|
@@ -269,32 +269,32 @@ test "get_nonexistent_key_with_psl" {
   m.set("x", 24)
   m.set("y", 25)
   m.set("z", 26)
-  inspect(m.get("A"), content="None")
-  inspect(m.get("B"), content="None")
-  inspect(m.get("C"), content="None")
-  inspect(m.get("D"), content="None")
-  inspect(m.get("E"), content="None")
-  inspect(m.get("F"), content="None")
-  inspect(m.get("G"), content="None")
-  inspect(m.get("H"), content="None")
-  inspect(m.get("I"), content="None")
-  inspect(m.get("J"), content="None")
-  inspect(m.get("K"), content="None")
-  inspect(m.get("L"), content="None")
-  inspect(m.get("M"), content="None")
-  inspect(m.get("N"), content="None")
-  inspect(m.get("O"), content="None")
-  inspect(m.get("P"), content="None")
-  inspect(m.get("Q"), content="None")
-  inspect(m.get("R"), content="None")
-  inspect(m.get("S"), content="None")
-  inspect(m.get("T"), content="None")
-  inspect(m.get("U"), content="None")
-  inspect(m.get("V"), content="None")
-  inspect(m.get("W"), content="None")
-  inspect(m.get("X"), content="None")
-  inspect(m.get("Y"), content="None")
-  inspect(m.get("Z"), content="None")
+  @debug.debug_inspect(m.get("A"), content="None")
+  @debug.debug_inspect(m.get("B"), content="None")
+  @debug.debug_inspect(m.get("C"), content="None")
+  @debug.debug_inspect(m.get("D"), content="None")
+  @debug.debug_inspect(m.get("E"), content="None")
+  @debug.debug_inspect(m.get("F"), content="None")
+  @debug.debug_inspect(m.get("G"), content="None")
+  @debug.debug_inspect(m.get("H"), content="None")
+  @debug.debug_inspect(m.get("I"), content="None")
+  @debug.debug_inspect(m.get("J"), content="None")
+  @debug.debug_inspect(m.get("K"), content="None")
+  @debug.debug_inspect(m.get("L"), content="None")
+  @debug.debug_inspect(m.get("M"), content="None")
+  @debug.debug_inspect(m.get("N"), content="None")
+  @debug.debug_inspect(m.get("O"), content="None")
+  @debug.debug_inspect(m.get("P"), content="None")
+  @debug.debug_inspect(m.get("Q"), content="None")
+  @debug.debug_inspect(m.get("R"), content="None")
+  @debug.debug_inspect(m.get("S"), content="None")
+  @debug.debug_inspect(m.get("T"), content="None")
+  @debug.debug_inspect(m.get("U"), content="None")
+  @debug.debug_inspect(m.get("V"), content="None")
+  @debug.debug_inspect(m.get("W"), content="None")
+  @debug.debug_inspect(m.get("X"), content="None")
+  @debug.debug_inspect(m.get("Y"), content="None")
+  @debug.debug_inspect(m.get("Z"), content="None")
 }
 
 ///|
@@ -359,39 +359,39 @@ test "@IndexMap.from_array with int key" {
 ///|
 test "shift" {
   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-  inspect(map.shift(), content="Some((\"a\", 1))")
+  @debug.debug_inspect(map.shift(), content="Some((\"a\", 1))")
   inspect(map.size(), content="2")
-  inspect(map.get("a"), content="None")
+  @debug.debug_inspect(map.get("a"), content="None")
 }
 
 ///|
 test "pop" {
   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-  inspect(map.pop(), content="Some((\"c\", 3))")
+  @debug.debug_inspect(map.pop(), content="Some((\"c\", 3))")
   inspect(map.size(), content="2")
-  inspect(map.get("c"), content="None")
+  @debug.debug_inspect(map.get("c"), content="None")
 }
 
 ///|
 test "get_first" {
   let map = @IndexMap.of([("a", 1), ("b", 2)])
-  inspect(map.get_first(), content="Some((\"a\", 1))")
+  @debug.debug_inspect(map.get_first(), content="Some((\"a\", 1))")
   inspect(map.size(), content="2") // 元素没有被移除
 }
 
 ///|
 test "get_last" {
   let map = @IndexMap.of([("a", 1), ("b", 2)])
-  inspect(map.get_last(), content="Some((\"b\", 2))")
+  @debug.debug_inspect(map.get_last(), content="Some((\"b\", 2))")
   inspect(map.size(), content="2") // 元素没有被移除
 }
 
 ///|
 test "index_of" {
   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
-  inspect(map.index_of("a"), content="Some(0)")
-  inspect(map.index_of("b"), content="Some(1)")
-  inspect(map.index_of("d"), content="None")
+  @debug.debug_inspect(map.index_of("a"), content="Some(0)")
+  @debug.debug_inspect(map.index_of("b"), content="Some(1)")
+  @debug.debug_inspect(map.index_of("d"), content="None")
 }
 
 ///|
@@ -400,22 +400,22 @@ test "get_at" {
   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3), ("d", 4)])
 
   // 测试有效索引
-  inspect(map.get_at(0), content="Some((\"a\", 1))")
-  inspect(map.get_at(1), content="Some((\"b\", 2))")
-  inspect(map.get_at(2), content="Some((\"c\", 3))")
-  inspect(map.get_at(3), content="Some((\"d\", 4))")
+  @debug.debug_inspect(map.get_at(0), content="Some((\"a\", 1))")
+  @debug.debug_inspect(map.get_at(1), content="Some((\"b\", 2))")
+  @debug.debug_inspect(map.get_at(2), content="Some((\"c\", 3))")
+  @debug.debug_inspect(map.get_at(3), content="Some((\"d\", 4))")
 
   // 测试无效索引
-  inspect(map.get_at(-1), content="None")
-  inspect(map.get_at(4), content="None")
+  @debug.debug_inspect(map.get_at(-1), content="None")
+  @debug.debug_inspect(map.get_at(4), content="None")
 
   // 测试空映射
   let empty_map : @IndexMap.T[String, Int] = @IndexMap.new()
-  inspect(empty_map.get_at(0), content="None")
+  @debug.debug_inspect(empty_map.get_at(0), content="None")
 
   // 测试修改元素后的索引访问
   map.set("b", 20)
-  inspect(map.get_at(1), content="Some((\"b\", 20))")
+  @debug.debug_inspect(map.get_at(1), content="Some((\"b\", 20))")
 }
 
 ///|
@@ -423,47 +423,47 @@ test "reversed" {
   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
   let rev_map = map.reversed()
   println(rev_map.keys())
-  assert_eq(rev_map.keys(), ["c", "b", "a"])
-  assert_eq(map.keys(), ["a", "b", "c"]) // 原始映射保持不变
+  @debug.assert_eq(rev_map.keys(), ["c", "b", "a"])
+  @debug.assert_eq(map.keys(), ["a", "b", "c"]) // 原始映射保持不变
 }
 
 ///|
 test "sorted_by_values" {
   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
   let sorted_map = map.sorted_by_values()
-  assert_eq(sorted_map.values(), [1, 2, 3])
+  @debug.assert_eq(sorted_map.values(), [1, 2, 3])
 }
 
 ///|
 test "sorted" {
   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
   let sorted_map = map.sorted()
-  assert_eq(sorted_map.keys(), ["a", "b", "c"])
-  assert_eq(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
+  @debug.assert_eq(sorted_map.keys(), ["a", "b", "c"])
+  @debug.assert_eq(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
 }
 
 ///|
 test "sorted_by_value" {
   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
   let sorted_map = map.sorted_by_value(fn(v1, v2) { v1 - v2 })
-  assert_eq(sorted_map.values(), [1, 2, 3])
-  assert_eq(map.values(), [3, 1, 2]) // 原始映射保持不变
+  @debug.assert_eq(sorted_map.values(), [1, 2, 3])
+  @debug.assert_eq(map.values(), [3, 1, 2]) // 原始映射保持不变
 }
 
 ///|
 test "sorted_by_key" {
   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
   let sorted_map = map.sorted_by_key(fn(k1, k2) { k1.compare(k2) })
-  assert_eq(sorted_map.keys(), ["a", "b", "c"])
-  assert_eq(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
+  @debug.assert_eq(sorted_map.keys(), ["a", "b", "c"])
+  @debug.assert_eq(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
 }
 
 ///|
 test "sorted_by" {
   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
   let sorted_map = map.sorted_by(fn(k1, _v1, k2, _v2) { k1.compare(k2) })
-  assert_eq(sorted_map.keys(), ["a", "b", "c"])
-  assert_eq(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
+  @debug.assert_eq(sorted_map.keys(), ["a", "b", "c"])
+  @debug.assert_eq(map.keys(), ["c", "a", "b"]) // 原始映射保持不变
 }
 
 ///|
@@ -471,7 +471,7 @@ test "reverse" {
   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
   map.reverse()
   let keys = map.keys()
-  assert_eq(keys, ["c", "b", "a"])
+  @debug.assert_eq(keys, ["c", "b", "a"])
 }
 
 ///|
@@ -479,7 +479,7 @@ test "sort" {
   let map = @IndexMap.of([("c", 3), ("a", 1), ("b", 2)])
   map.sort()
   let keys = map.keys()
-  assert_eq(keys, ["a", "b", "c"])
+  @debug.assert_eq(keys, ["a", "b", "c"])
 }
 
 ///|
@@ -488,7 +488,7 @@ test "sort_by_value" {
   // 按值降序排序
   map.sort_by_value(fn(v1, v2) { v2 - v1 })
   let values = map.values()
-  assert_eq(values, [3, 2, 1])
+  @debug.assert_eq(values, [3, 2, 1])
 }
 
 ///|
@@ -497,7 +497,7 @@ test "sort_by_key" {
   // 按键字母顺序排序
   map.sort_by_key(fn(k1, k2) { k1.compare(k2) })
   let keys = map.keys()
-  assert_eq(keys, ["a", "b", "c"])
+  @debug.assert_eq(keys, ["a", "b", "c"])
 }
 
 ///|
@@ -506,7 +506,7 @@ test "sort_by" {
   // 按键字母顺序排序
   map.sort_by(fn(k1, _v1, k2, _v2) { k1.compare(k2) })
   let keys = map.keys()
-  assert_eq(keys, ["a", "b", "c"])
+  @debug.assert_eq(keys, ["a", "b", "c"])
 }
 
 ///|
@@ -529,12 +529,12 @@ test "update_existing_key" {
 
   // 首次插入键值对
   map.set("key1", 100)
-  assert_eq(map.get("key1"), Some(100))
+  @debug.assert_eq(map.get("key1"), Some(100))
 
   // 更新同一个键的值
   map.set("key1", 200)
-  assert_eq(map.get("key1"), Some(200))
-  assert_eq(map.size(), 1) // 确认大小没有变化，只是更新了值
+  @debug.assert_eq(map.get("key1"), Some(200))
+  @debug.assert_eq(map.size(), 1) // 确认大小没有变化，只是更新了值
 }
 
 ///|
@@ -543,18 +543,18 @@ test "first_element_head_update" {
   let map : T[String, Int] = @IndexMap.new()
 
   // 确认初始状态
-  assert_eq(map.size(), 0)
+  @debug.assert_eq(map.size(), 0)
 
   // 使用断言检查私有成员是否为期望值
   let first_entry = map.first()
-  assert_eq(first_entry, None)
+  @debug.assert_eq(first_entry, None)
 
   // 插入第一个元素
   map.set("first", 1)
 
   // 验证头节点已正确设置
-  assert_eq(map.first(), Some(("first", 1)))
-  assert_eq(map.last(), Some(("first", 1)))
+  @debug.assert_eq(map.first(), Some(("first", 1)))
+  @debug.assert_eq(map.last(), Some(("first", 1)))
 }
 
 ///|
@@ -570,18 +570,18 @@ test "get_or_init_function" {
     init_calls += 1
     42
   })
-  assert_eq(value1, 42)
-  assert_eq(init_calls, 1)
-  assert_eq(map.get("new_key"), Some(42))
+  @debug.assert_eq(value1, 42)
+  @debug.assert_eq(init_calls, 1)
+  @debug.assert_eq(map.get("new_key"), Some(42))
 
   // 对已存在的键调用get_or_init
   let value2 = map.get_or_init("new_key", fn() {
     init_calls += 1
     100 // 这个值不应该被使用
   })
-  assert_eq(value2, 42) // 返回已存在的值
-  assert_eq(init_calls, 1) // init函数不应该再次调用
-  assert_eq(map.get("new_key"), Some(42))
+  @debug.assert_eq(value2, 42) // 返回已存在的值
+  @debug.assert_eq(init_calls, 1) // init函数不应该再次调用
+  @debug.assert_eq(map.get("new_key"), Some(42))
 }
 
 ///|
@@ -590,13 +590,13 @@ test "remove_on_empty_map" {
   let map : T[String, Int] = @IndexMap.new()
 
   // 确认映射为空
-  assert_eq(map.size(), 0)
+  @debug.assert_eq(map.size(), 0)
 
   // 在空映射上执行remove，不应抛出错误
   map.remove("non_existent_key")
 
   // 映射应该仍然为空
-  assert_eq(map.size(), 0)
+  @debug.assert_eq(map.size(), 0)
 }
 
 ///|
@@ -607,7 +607,7 @@ test "capacity_growth" {
 
   // 记录初始容量
   let initial_capacity = map.capacity()
-  assert_eq(initial_capacity, 4)
+  @debug.assert_eq(initial_capacity, 4)
 
   // 计算增长阈值 (75% 负载因子)
   let growth_threshold = initial_capacity * 3 / 4
@@ -622,14 +622,14 @@ test "capacity_growth" {
 
   // 验证容量已增加
   assert_true(map.capacity() > initial_capacity)
-  assert_eq(map.capacity(), 8) // 应该是原来的两倍
+  @debug.assert_eq(map.capacity(), 8) // 应该是原来的两倍
 
   // 验证所有元素仍然存在
   for i in 0..<=growth_threshold {
     if i == growth_threshold {
-      assert_eq(map.get(i), Some("trigger growth"))
+      @debug.assert_eq(map.get(i), Some("trigger growth"))
     } else {
-      assert_eq(map.get(i), Some("value" + i.to_string()))
+      @debug.assert_eq(map.get(i), Some("value" + i.to_string()))
     }
   }
 }
@@ -646,43 +646,43 @@ test "tail_next_pointer_update" {
   map.set("second", 2)
 
   // 验证链表顺序正确
-  assert_eq(map.to_array(), [("first", 1), ("second", 2)])
+  @debug.assert_eq(map.to_array(), [("first", 1), ("second", 2)])
 
   // 验证tail指向最后添加的元素
-  assert_eq(map.last(), Some(("second", 2)))
+  @debug.assert_eq(map.last(), Some(("second", 2)))
 
   // 添加第三个元素
   map.set("third", 3)
 
   // 再次验证链表顺序
-  assert_eq(map.to_array(), [("first", 1), ("second", 2), ("third", 3)])
+  @debug.assert_eq(map.to_array(), [("first", 1), ("second", 2), ("third", 3)])
 
   // 确认tali指向最新添加的元素
-  assert_eq(map.last(), Some(("third", 3)))
+  @debug.assert_eq(map.last(), Some(("third", 3)))
 }
 
 ///|
 test "0 size" {
   let map : T[String, Int] = @IndexMap.new()
-  assert_eq(map.values(), [])
-  assert_eq(map.keys(), [])
-  assert_eq(map.to_array(), [])
+  @debug.assert_eq(map.values(), [])
+  @debug.assert_eq(map.keys(), [])
+  @debug.assert_eq(map.to_array(), [])
   map.sort_by(fn(k1, _v1, k2, _v2) { k1.compare(k2) })
-  assert_eq(map.to_array(), [])
+  @debug.assert_eq(map.to_array(), [])
   let mut test0 = map.shift()
-  assert_eq(test0, None)
+  @debug.assert_eq(test0, None)
   test0 = map.last()
-  assert_eq(test0, None)
+  @debug.assert_eq(test0, None)
   test0 = map.first()
-  assert_eq(test0, None)
+  @debug.assert_eq(test0, None)
   test0 = map.get_first()
-  assert_eq(test0, None)
+  @debug.assert_eq(test0, None)
   test0 = map.get_last()
-  assert_eq(test0, None)
+  @debug.assert_eq(test0, None)
   test0 = map.pop()
-  assert_eq(test0, None)
+  @debug.assert_eq(test0, None)
   map.remove("1")
-  assert_eq(map.size(), 0)
+  @debug.assert_eq(map.size(), 0)
 }
 
 ///|
@@ -728,7 +728,7 @@ test "set_update_existing_key" {
 
   // 首次插入
   map.set("key", "original_value")
-  assert_eq(map.get("key"), Some("original_value"))
+  @debug.assert_eq(map.get("key"), Some("original_value"))
 
   // 获取初始大小和顺序信息
   let initial_size = map.size()
@@ -738,13 +738,13 @@ test "set_update_existing_key" {
   map.set("key", "updated_value")
 
   // 验证值已更新
-  assert_eq(map.get("key"), Some("updated_value"))
+  @debug.assert_eq(map.get("key"), Some("updated_value"))
 
   // 验证大小未变化（没有添加新条目）
-  assert_eq(map.size(), initial_size)
+  @debug.assert_eq(map.size(), initial_size)
 
   // 验证键的顺序未变化
-  assert_eq(map.keys(), initial_keys)
+  @debug.assert_eq(map.keys(), initial_keys)
 }
 
 ///|
@@ -755,7 +755,7 @@ test "reverse_with_small_size" {
   let empty_keys_before = empty_map.keys()
   empty_map.reverse()
   let empty_keys_after = empty_map.keys()
-  assert_eq(empty_keys_before, empty_keys_after)
+  @debug.assert_eq(empty_keys_before, empty_keys_after)
 
   // 测试只有一个元素的映射
   let single_map = @IndexMap.new()
@@ -763,8 +763,8 @@ test "reverse_with_small_size" {
   let single_keys_before = single_map.keys()
   single_map.reverse()
   let single_keys_after = single_map.keys()
-  assert_eq(single_keys_before, single_keys_after)
-  assert_eq(single_map.get("key"), Some("value"))
+  @debug.assert_eq(single_keys_before, single_keys_after)
+  @debug.assert_eq(single_map.get("key"), Some("value"))
 }
 
 ///|
@@ -808,9 +808,9 @@ test "sort_with_equal_keys" {
   let sorted_keys = map.keys()
 
   // 验证排序结果（相等的键应保持相对顺序）
-  assert_eq(sorted_keys[0].value, 10)
-  assert_eq(sorted_keys[1].value, 10)
-  assert_eq(sorted_keys[2].value, 20)
+  @debug.assert_eq(sorted_keys[0].value, 10)
+  @debug.assert_eq(sorted_keys[1].value, 10)
+  @debug.assert_eq(sorted_keys[2].value, 20)
 }
 
 ///|
@@ -832,8 +832,8 @@ test "sorted_functions_with_equal_values" {
   })
 
   // 验证结果（应该只有一个10键，因为它覆盖了之前的值）
-  assert_eq(result1.size(), 2)
-  assert_eq(result1.get(10), Some("C"))
+  @debug.assert_eq(result1.size(), 2)
+  @debug.assert_eq(result1.get(10), Some("C"))
 
   // 测试sorted_by_values相等情况
   let map2 = @IndexMap.new()
@@ -844,7 +844,7 @@ test "sorted_functions_with_equal_values" {
 
   // 验证结果（相等值的键应该保持插入顺序）
   let keys = result2.keys()
-  assert_eq(keys.length(), 3)
+  @debug.assert_eq(keys.length(), 3)
 
   // 找到值为10的键，它们应该在前面
   let val10_keys = []
@@ -855,7 +855,7 @@ test "sorted_functions_with_equal_values" {
   }
 
   // 验证有两个值为10的键
-  assert_eq(val10_keys.length(), 2)
+  @debug.assert_eq(val10_keys.length(), 2)
   assert_true(val10_keys.contains("A"))
   assert_true(val10_keys.contains("C"))
 }
@@ -878,11 +878,11 @@ test "idx_to_position_default_handling" {
   // 访问某个操作，触发position查找
   // 即使内部存在不一致，操作应该成功完成
   let result = map.get("new_key")
-  assert_eq(result, Some("new_value"))
+  @debug.assert_eq(result, Some("new_value"))
 
   // 确认可以正常遍历
   let keys = map.keys()
-  assert_eq(keys, ["new_key"])
+  @debug.assert_eq(keys, ["new_key"])
 }
 
 ///|
@@ -892,21 +892,21 @@ test "remove_only_element_clears_list" {
 
   // 添加唯一元素
   map.set("only_key", "only_value")
-  assert_eq(map.size(), 1)
-  assert_eq(map.first(), Some(("only_key", "only_value")))
+  @debug.assert_eq(map.size(), 1)
+  @debug.assert_eq(map.first(), Some(("only_key", "only_value")))
 
   // 移除唯一元素
   map.remove("only_key")
 
   // 验证链表已清空
-  assert_eq(map.size(), 0)
-  assert_eq(map.first(), None)
-  assert_eq(map.last(), None)
+  @debug.assert_eq(map.size(), 0)
+  @debug.assert_eq(map.first(), None)
+  @debug.assert_eq(map.last(), None)
 
   // 验证可以继续添加元素
   map.set("new_key", "new_value")
-  assert_eq(map.size(), 1)
-  assert_eq(map.first(), Some(("new_key", "new_value")))
+  @debug.assert_eq(map.size(), 1)
+  @debug.assert_eq(map.first(), Some(("new_key", "new_value")))
 }
 
 ///|
@@ -916,16 +916,16 @@ test "shift_only_element_clears_list" {
 
   // 添加唯一元素
   map.set("only_key", "only_value")
-  assert_eq(map.size(), 1)
+  @debug.assert_eq(map.size(), 1)
 
   // 使用shift移除唯一元素
   let removed = map.shift()
-  assert_eq(removed, Some(("only_key", "only_value")))
+  @debug.assert_eq(removed, Some(("only_key", "only_value")))
 
   // 验证链表已清空
-  assert_eq(map.size(), 0)
-  assert_eq(map.first(), None)
-  assert_eq(map.last(), None)
+  @debug.assert_eq(map.size(), 0)
+  @debug.assert_eq(map.first(), None)
+  @debug.assert_eq(map.last(), None)
 }
 
 ///|
@@ -935,16 +935,16 @@ test "pop_only_element_clears_list" {
 
   // 添加唯一元素
   map.set("only_key", "only_value")
-  assert_eq(map.size(), 1)
+  @debug.assert_eq(map.size(), 1)
 
   // 使用pop移除唯一元素
   let removed = map.pop()
-  assert_eq(removed, Some(("only_key", "only_value")))
+  @debug.assert_eq(removed, Some(("only_key", "only_value")))
 
   // 验证链表已清空
-  assert_eq(map.size(), 0)
-  assert_eq(map.first(), None)
-  assert_eq(map.last(), None)
+  @debug.assert_eq(map.size(), 0)
+  @debug.assert_eq(map.first(), None)
+  @debug.assert_eq(map.last(), None)
 }
 
 ///|
@@ -973,7 +973,7 @@ test "iteration_early_termination" {
   })
 
   // 验证只处理了两个元素
-  assert_eq(count, 2)
+  @debug.assert_eq(count, 2)
 }
 
 ///|
@@ -985,8 +985,8 @@ test "complete_key_update_process" {
   map.set("key", "old_value")
 
   // 验证初始状态
-  assert_eq(map.size(), 1)
-  assert_eq(map.get("key"), Some("old_value"))
+  @debug.assert_eq(map.size(), 1)
+  @debug.assert_eq(map.get("key"), Some("old_value"))
 
   // 保存内部数据状态
   let old_size = map.size()
@@ -996,9 +996,9 @@ test "complete_key_update_process" {
   map.set("key", "new_value")
 
   // 验证更新后的状态
-  assert_eq(map.size(), old_size) // 大小应该不变
-  assert_eq(map.capacity(), old_capacity) // 容量应该不变
-  assert_eq(map.get("key"), Some("new_value")) // 值应该更新
+  @debug.assert_eq(map.size(), old_size) // 大小应该不变
+  @debug.assert_eq(map.capacity(), old_capacity) // 容量应该不变
+  @debug.assert_eq(map.get("key"), Some("new_value")) // 值应该更新
 }
 
 ///|
@@ -1010,7 +1010,7 @@ test "tail_next_pointer_complete_update" {
   map.set("first", 1)
 
   // 验证首尾指向同一个元素
-  assert_eq(map.first(), map.last())
+  @debug.assert_eq(map.first(), map.last())
 
   // 添加更多元素，测试尾部链接
   map.set("second", 2)
@@ -1018,12 +1018,12 @@ test "tail_next_pointer_complete_update" {
 
   // 验证顺序和连接
   let array = map.to_array()
-  assert_eq(array, [("first", 1), ("second", 2), ("third", 3)])
+  @debug.assert_eq(array, [("first", 1), ("second", 2), ("third", 3)])
 
   // 确保可以从头遍历到尾
   let items = []
   map.each(fn(k, v) { items.push((k, v)) })
-  assert_eq(items, array)
+  @debug.assert_eq(items, array)
 }
 
 ///|
@@ -1033,14 +1033,14 @@ test "growth_from_zero_capacity" {
   let map : @IndexMap.T[String, Int] = @IndexMap.new(capacity=0)
 
   // 验证初始容量
-  assert_eq(map.capacity(), 0)
+  @debug.assert_eq(map.capacity(), 0)
 
   // 添加元素应触发扩容
   map.set("key", 100)
 
   // 验证扩容成功
   assert_true(map.capacity() > 0)
-  assert_eq(map.get("key"), Some(100))
+  @debug.assert_eq(map.get("key"), Some(100))
 }
 
 ///|
@@ -1064,10 +1064,10 @@ test "iter2_early_termination" {
   }
 
   // 验证只处理了两个元素
-  assert_eq(count, 2)
-  assert_eq(result.length(), 2)
-  assert_eq(result[0], ("key1", 1))
-  assert_eq(result[1], ("key2", 2))
+  @debug.assert_eq(count, 2)
+  @debug.assert_eq(result.length(), 2)
+  @debug.assert_eq(result[0], ("key1", 1))
+  @debug.assert_eq(result[1], ("key2", 2))
 }
 
 ///|
@@ -1091,13 +1091,13 @@ test "shift_with_missing_position_mapping" {
   let shifted = map.shift()
 
   // 验证操作成功，即使存在内部不一致
-  assert_eq(shifted, Some(("only_key", "only_value")))
-  assert_eq(map.size(), 0)
+  @debug.assert_eq(shifted, Some(("only_key", "only_value")))
+  @debug.assert_eq(map.size(), 0)
 
   // 确认可以继续正常操作
   map.set("new_key", "new_value")
-  assert_eq(map.size(), 1)
-  assert_eq(map.get("new_key"), Some("new_value"))
+  @debug.assert_eq(map.size(), 1)
+  @debug.assert_eq(map.get("new_key"), Some("new_value"))
 }
 
 ///|
@@ -1124,21 +1124,21 @@ test "sorted_with_equal_keys" {
   let keys = sorted_map.keys()
 
   // 验证排序结果
-  assert_eq(keys.length(), 4)
+  @debug.assert_eq(keys.length(), 4)
 
   // 前三个键的value都应该是10
-  assert_eq(keys[0].value, 10)
-  assert_eq(keys[1].value, 10)
-  assert_eq(keys[2].value, 10)
-  assert_eq(keys[3].value, 20)
+  @debug.assert_eq(keys[0].value, 10)
+  @debug.assert_eq(keys[1].value, 10)
+  @debug.assert_eq(keys[2].value, 10)
+  @debug.assert_eq(keys[3].value, 20)
 
   // 相等键应该保持原始插入顺序
-  assert_eq(keys[0].id, 1) // key1
-  assert_eq(keys[1].id, 4) // key4
-  assert_eq(keys[2].id, 2) // key2
+  @debug.assert_eq(keys[0].id, 1) // key1
+  @debug.assert_eq(keys[1].id, 4) // key4
+  @debug.assert_eq(keys[2].id, 2) // key2
 
   // 原始映射不变
-  assert_eq(map.keys()[0].value, 20) // key3
+  @debug.assert_eq(map.keys()[0].value, 20) // key3
 }
 
 ///|
@@ -1152,15 +1152,15 @@ test "set_with_hash_update_existing_key" {
 
   // 首次使用set_with_hash插入
   map.set_with_hash(key, "original_value", hash)
-  assert_eq(map.get(key), Some("original_value"))
-  assert_eq(map.size(), 1)
+  @debug.assert_eq(map.get(key), Some("original_value"))
+  @debug.assert_eq(map.size(), 1)
 
   // 使用相同键和哈希值更新现有值
   map.set_with_hash(key, "updated_value", hash)
 
   // 验证值已更新但大小不变
-  assert_eq(map.get(key), Some("updated_value"))
-  assert_eq(map.size(), 1)
+  @debug.assert_eq(map.get(key), Some("updated_value"))
+  @debug.assert_eq(map.size(), 1)
 }
 
 ///|
@@ -1175,7 +1175,7 @@ test "set_with_hash_update_tail_next" {
 
   // 记录初始尾节点
   let initial_tail = map.last()
-  assert_eq(initial_tail, Some((key1, 1)))
+  @debug.assert_eq(initial_tail, Some((key1, 1)))
 
   // 使用set_with_hash添加第二个元素
   let key2 = "second"
@@ -1184,11 +1184,11 @@ test "set_with_hash_update_tail_next" {
 
   // 验证链表更新正确
   // 1. 新的尾节点应该是第二个元素
-  assert_eq(map.last(), Some((key2, 2)))
+  @debug.assert_eq(map.last(), Some((key2, 2)))
 
   // 2. 验证顺序正确（通过转换为数组并检查顺序）
   let array = map.to_array()
-  assert_eq(array, [(key1, 1), (key2, 2)])
+  @debug.assert_eq(array, [(key1, 1), (key2, 2)])
 
   // 3. 可以通过第一个元素遍历到第二个元素
   let mut found_second = false
@@ -1212,7 +1212,7 @@ test "set_with_hash_triggers_growth" {
 
   // 记录初始容量
   let initial_capacity = map.capacity()
-  assert_eq(initial_capacity, 4)
+  @debug.assert_eq(initial_capacity, 4)
 
   // 计算增长阈值 (75% 负载因子)
   let growth_threshold = initial_capacity * 3 / 4 // 应该是3
@@ -1234,14 +1234,14 @@ test "set_with_hash_triggers_growth" {
   // 验证容量已增长
   assert_true(map.capacity() > initial_capacity)
   // 通常是翻倍
-  assert_eq(map.capacity(), initial_capacity * 2)
+  @debug.assert_eq(map.capacity(), initial_capacity * 2)
 
   // 验证所有元素仍然存在
   for i in 0..<growth_threshold {
     let key = "key" + i.to_string()
-    assert_eq(map.get(key), Some(i))
+    @debug.assert_eq(map.get(key), Some(i))
   }
-  assert_eq(map.get(trigger_key), Some(999))
+  @debug.assert_eq(map.get(trigger_key), Some(999))
 }
 
 ///|
@@ -1251,7 +1251,7 @@ test "set_with_hash_growth_from_zero_capacity" {
   let map = @IndexMap.new(capacity=0)
 
   // 验证初始容量
-  assert_eq(map.capacity(), 0)
+  @debug.assert_eq(map.capacity(), 0)
 
   // 使用set_with_hash添加元素
   let key = "test"
@@ -1260,5 +1260,5 @@ test "set_with_hash_growth_from_zero_capacity" {
 
   // 验证容量已增长到有效值
   assert_true(map.capacity() > 0)
-  assert_eq(map.get(key), Some("value"))
+  @debug.assert_eq(map.get(key), Some("value"))
 }

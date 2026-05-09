@@ -155,7 +155,6 @@ pub fn[K : Hash + Eq, V] T::set(self : T[K, V], key : K, value : V) -> Unit {
 }
 
 ///|
-///|
 /// Sets a key-value pair with a pre-computed hash
 pub fn[K : Hash + Eq, V] T::set_with_hash(
   self : T[K, V],
@@ -523,8 +522,8 @@ pub fn[K : Hash + Eq, V] of(arr : FixedArray[(K, V)]) -> T[K, V] {
 ///|
 test "of" {
   let m = of([(1, 2), (3, 4)])
-  inspect(m.get(1), content="Some(2)")
-  inspect(m.get(3), content="Some(4)")
+  @debug.debug_inspect(m.get(1), content="Some(2)")
+  @debug.debug_inspect(m.get(3), content="Some(4)")
 }
 
 ///|
@@ -589,13 +588,13 @@ test "MyString hash_combine implementation" {
   let result = map.get(str2)
 
   // 验证结果
-  assert_eq(result, Some("value1"))
+  @debug.assert_eq(result, Some("value1"))
 
   // 确认只有一个元素（即两个MyString哈希到同一个桶）
-  assert_eq(map.size(), 1)
+  @debug.assert_eq(map.size(), 1)
 
   // 测试哈希值本身是否一致
-  assert_eq(str1.hash(), str2.hash())
+  @debug.assert_eq(str1.hash(), str2.hash())
 
   // 测试不同内容的字符串是否正确区分
   let str3 = "different_string"
@@ -646,7 +645,7 @@ test "remove" {
   m.set("abc", 3)
   m.set("abcdef", 6)
   m.remove("ab")
-  assert_eq(m.size(), 5)
+  @debug.assert_eq(m.size(), 5)
   // inspect!(
   //    m.debug_entries(),
   //  content="_,(0,a,1),(0,bc,2),(1,cd,2),(1,abc,3),_,(0,abcdef,6),_,_,_,_,_,_,_,_,_",
@@ -660,7 +659,7 @@ test "remove_unexist_key" {
   m.set("ab", 2)
   m.set("abc", 3)
   m.remove("d")
-  assert_eq(m.size(), 3)
+  @debug.assert_eq(m.size(), 3)
   // inspect!(m.debug_entries(), content="_,(0,a,1),(0,ab,2),(0,abc,3),_,_,_,_")
 }
 
@@ -672,19 +671,19 @@ test "clear" {
   m.clear()
 
   // 验证基本属性
-  assert_eq(m.size(), 0)
-  assert_eq(m.capacity(), old_capacity) // 容量应保持不变
+  @debug.assert_eq(m.size(), 0)
+  @debug.assert_eq(m.capacity(), old_capacity) // 容量应保持不变
 
   // 验证内部结构已正确清空
-  assert_eq(m.core.entries.length(), 0) // entries 应为空数组
-  assert_eq(m.core.head, -1) // 头指针应为 -1
-  assert_eq(m.core.tail, -1) // 尾指针应为 -1
-  assert_eq(m.core.position_to_idx.length(), 0) // 位置映射应为空
+  @debug.assert_eq(m.core.entries.length(), 0) // entries 应为空数组
+  @debug.assert_eq(m.core.head, -1) // 头指针应为 -1
+  @debug.assert_eq(m.core.tail, -1) // 尾指针应为 -1
+  @debug.assert_eq(m.core.position_to_idx.length(), 0) // 位置映射应为空
 
   // 验证功能正确性
-  assert_eq(m.get("a"), None)
-  assert_eq(m.get("b"), None)
-  assert_eq(m.get("c"), None)
+  @debug.assert_eq(m.get("a"), None)
+  @debug.assert_eq(m.get("b"), None)
+  @debug.assert_eq(m.get("c"), None)
 }
 
 ///|
@@ -697,7 +696,7 @@ test "grow" {
   m.set("Scala", 5)
   inspect(m.capacity(), content="8")
   m.set("Julia", 5)
-  assert_eq(m.size(), 6)
+  @debug.assert_eq(m.size(), 6)
   inspect(m.capacity(), content="16")
   println(m.debug_entries())
   // inspect!(
