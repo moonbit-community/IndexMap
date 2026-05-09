@@ -27,17 +27,17 @@ fn calc_grow_threshold(capacity : Int) -> Int {
 pub fn[K, V] new(capacity? : Int = Default_init_capacity) -> T[K, V] {
   {
     core: {
-      hash_to_idx: @hashmap.new(),
+      hash_to_idx: @hashmap.HashMap([], capacity~),
       entries: [],
       head: -1,
       tail: -1,
       position_to_idx: [], // 初始化为空数组
-      idx_to_position: @hashmap.new(), // 初始化为空映射
+      idx_to_position: @hashmap.HashMap([], capacity~), // 初始化为空映射
     },
     size: 0,
     capacity,
     growAt: calc_grow_threshold(capacity),
-    key_to_idx: @hashmap.new(),
+    key_to_idx: @hashmap.HashMap::default(),
   }
 }
 
@@ -155,7 +155,7 @@ pub fn[K : Hash + Eq, V] T::set(self : T[K, V], key : K, value : V) -> Unit {
 }
 
 ///|
-//////|
+///|
 /// Sets a key-value pair with a pre-computed hash
 pub fn[K : Hash + Eq, V] T::set_with_hash(
   self : T[K, V],
@@ -737,9 +737,9 @@ pub fn[K, V] T::clear(self : T[K, V]) -> Unit {
   self.core.head = -1
   self.core.tail = -1
   self.core.position_to_idx = []
-  self.core.idx_to_position = @hashmap.new() // 清空索引到位置的映射
+  self.core.idx_to_position = @hashmap.HashMap([], capacity=self.capacity) // 清空索引到位置的映射
   self.size = 0
-  self.key_to_idx = @hashmap.new()
+  self.key_to_idx = @hashmap.HashMap::default()
 }
 
 ///|
@@ -779,14 +779,14 @@ fn[K : Hash + Eq, V] T::grow(self : T[K, V]) -> Unit {
     self.capacity = self.capacity * 2
   }
   self.growAt = calc_grow_threshold(self.capacity)
-  self.core.hash_to_idx = @hashmap.new()
+  self.core.hash_to_idx = @hashmap.HashMap([], capacity=self.capacity)
   self.core.entries = []
   self.core.head = -1
   self.core.tail = -1
   self.core.position_to_idx = []
-  self.core.idx_to_position = @hashmap.new()
+  self.core.idx_to_position = @hashmap.HashMap([], capacity=self.capacity)
   self.size = 0
-  self.key_to_idx = @hashmap.new()
+  self.key_to_idx = @hashmap.HashMap([], capacity=self.capacity)
 
   // 重新添加所有元素，保持原顺序
   let mut current = old_head
@@ -1178,7 +1178,7 @@ pub fn[K : Show, V : ToJson] T::to_json_string(self : T[K, V]) -> String {
 /// Standard ToJson implementation (may not preserve order)
 pub impl[K : Show, V : ToJson] ToJson for T[K, V] with to_json(self) {
   // 使用普通Map
-  let object = Map::new(capacity=self.size)
+  let object = Map([], capacity=self.size)
 
   // 按照插入顺序遍历元素
   let mut current = self.core.head
@@ -1377,7 +1377,7 @@ pub fn[K, V] T::sort_by(self : T[K, V], compare : (K, V, K, V) -> Int) -> Unit {
 
   // 3. 重建链表和位置映射
   self.core.position_to_idx = []
-  self.core.idx_to_position = @hashmap.new()
+  self.core.idx_to_position = @hashmap.HashMap([], capacity=self.size)
 
   // 重建头尾指针
   self.core.head = entries[0].0
