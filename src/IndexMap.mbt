@@ -1167,7 +1167,7 @@ pub fn[K : Show, V : ToJson] T::to_json_string(self : T[K, V]) -> String {
     result = result + "\"" + entry.key.to_string() + "\":"
 
     // 添加值（转换为JSON）
-    result = result + entry.value.to_json().to_string()
+    result = result + entry.value.to_json().stringify()
     current = entry.next
   }
   result + "}"

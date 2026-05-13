@@ -164,12 +164,7 @@ test "iter2" {
 ///|
 test "to_array" {
   let map = @IndexMap.of([(1, "one"), (2, "two"), (3, "three")])
-  inspect(
-    map.to_array(),
-    content=(
-      #|[(1, "one"), (2, "two"), (3, "three")]
-    ),
-  )
+  @debug.assert_eq(map.to_array(), [(1, "one"), (2, "two"), (3, "three")])
 }
 
 ///|
@@ -422,7 +417,6 @@ test "get_at" {
 test "reversed" {
   let map = @IndexMap.of([("a", 1), ("b", 2), ("c", 3)])
   let rev_map = map.reversed()
-  println(rev_map.keys())
   @debug.assert_eq(rev_map.keys(), ["c", "b", "a"])
   @debug.assert_eq(map.keys(), ["a", "b", "c"]) // 原始映射保持不变
 }
@@ -512,14 +506,21 @@ test "sort_by" {
 ///|
 test "IndexSet arbitrary" {
   let samples : Array[@IndexMap.T[Int, Int]] = @quickcheck.samples(20)
-  inspect(
-    samples[5:10],
-    content="[IndexMap::of([]), IndexMap::of([]), IndexMap::of([(0, 0)]), IndexMap::of([(0, 0)]), IndexMap::of([(0, 0)])]",
-  )
-  inspect(
-    samples[11:15],
-    content="[IndexMap::of([(0, 0), (-1, 1), (2, 0), (-3, -2)]), IndexMap::of([(0, 0)]), IndexMap::of([(0, -1), (-2, 5), (7, -7), (-8, 1), (3, 6)]), IndexMap::of([(0, 0)])]",
-  )
+  let sample_arrays_5_10 = []
+  for sample in samples[5:10] {
+    sample_arrays_5_10.push(sample.to_array())
+  }
+  @debug.assert_eq(sample_arrays_5_10, [[], [], [(0, 0)], [(0, 0)], [(0, 0)]])
+  let sample_arrays_11_15 = []
+  for sample in samples[11:15] {
+    sample_arrays_11_15.push(sample.to_array())
+  }
+  @debug.assert_eq(sample_arrays_11_15, [
+    [(0, 0), (-1, 1), (2, 0), (-3, -2)],
+    [(0, 0)],
+    [(0, -1), (-2, 5), (7, -7), (-8, 1), (3, 6)],
+    [(0, 0)],
+  ])
 }
 
 ///|
@@ -696,9 +697,9 @@ test "to_json_string_function" {
   // 验证JSON字符串格式正确，并且保持了插入顺序
   let json = map.to_json_string()
   // 使用实际输出的格式进行断言
-  assert_true(json.contains("\"name\":String(\"John\")"))
-  assert_true(json.contains("\"age\":String(\"30\")"))
-  assert_true(json.contains("\"city\":String(\"New York\")"))
+  assert_true(json.contains("\"name\":\"John\""))
+  assert_true(json.contains("\"age\":\"30\""))
+  assert_true(json.contains("\"city\":\"New York\""))
 
   // 确认顺序正确（通过检查子字符串相对位置）
   let name_pos = json.find("name").unwrap()
