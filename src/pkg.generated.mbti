@@ -19,6 +19,7 @@ pub fn[K : Hash + Eq, V] of(FixedArray[(K, V)]) -> T[K, V]
 
 // Types and methods
 type T[K, V]
+pub fn[K : @quickcheck.Arbitrary + Hash + Eq, V : @quickcheck.Arbitrary] T::arbitrary(Int, @splitmix.RandomState) -> Self[K, V]
 pub fn[K, V] T::capacity(Self[K, V]) -> Int
 pub fn[K, V] T::clear(Self[K, V]) -> Unit
 pub fn[K : Hash + Eq, V] T::contains(Self[K, V], K) -> Bool
@@ -28,6 +29,7 @@ pub fn[K, V] T::eachi(Self[K, V], (Int, K, V) -> Unit) -> Unit
 pub fn[K, V] T::first(Self[K, V]) -> (K, V)?
 #deprecated
 pub fn[K : Hash + Eq, V] T::from_iter(Iter[(K, V)]) -> Self[K, V]
+#alias("_[_]")
 pub fn[K : Hash + Eq, V] T::get(Self[K, V], K) -> V?
 pub fn[K, V] T::get_at(Self[K, V], Int) -> (K, V)?
 pub fn[K, V] T::get_first(Self[K, V]) -> (K, V)?
@@ -40,12 +42,12 @@ pub fn[K, V] T::iter(Self[K, V]) -> Iter[(K, V)]
 pub fn[K, V] T::iter2(Self[K, V]) -> Iter2[K, V]
 pub fn[K, V] T::keys(Self[K, V]) -> Array[K]
 pub fn[K, V] T::last(Self[K, V]) -> (K, V)?
-pub fn[K : Hash + Eq, V] T::op_get(Self[K, V], K) -> V?
-pub fn[K : Hash + Eq, V] T::op_set(Self[K, V], K, V) -> Unit
+pub fn[K : Show, V : Show] T::output(Self[K, V], &Logger) -> Unit
 pub fn[K : Hash + Eq, V] T::pop(Self[K, V]) -> (K, V)?
 pub fn[K : Hash + Eq, V] T::remove(Self[K, V], K) -> Unit
 pub fn[K, V] T::reverse(Self[K, V]) -> Unit
 pub fn[K : Hash + Eq, V] T::reversed(Self[K, V]) -> Self[K, V]
+#alias("_[_]=_")
 pub fn[K : Hash + Eq, V] T::set(Self[K, V], K, V) -> Unit
 pub fn[K : Hash + Eq, V] T::set_with_hash(Self[K, V], K, V, Int) -> Unit
 pub fn[K : Hash + Eq, V] T::shift(Self[K, V]) -> (K, V)?
@@ -60,7 +62,9 @@ pub fn[K : Hash + Eq, V] T::sorted_by_key(Self[K, V], (K, K) -> Int) -> Self[K, 
 pub fn[K : Hash + Eq, V] T::sorted_by_value(Self[K, V], (V, V) -> Int) -> Self[K, V]
 pub fn[K : Hash + Eq, V : Compare] T::sorted_by_values(Self[K, V]) -> Self[K, V]
 pub fn[K, V] T::to_array(Self[K, V]) -> Array[(K, V)]
+pub fn[K : Show, V : ToJson] T::to_json(Self[K, V]) -> Json
 pub fn[K : Show, V : ToJson] T::to_json_string(Self[K, V]) -> String
+pub fn[K : Show, V : Show] T::to_string(Self[K, V]) -> String
 pub fn[K, V] T::values(Self[K, V]) -> Array[V]
 pub impl[K : Show, V : Show] Show for T[K, V]
 pub impl[K : Show, V : ToJson] ToJson for T[K, V]
@@ -69,4 +73,3 @@ pub impl[K : @quickcheck.Arbitrary + Hash + Eq, V : @quickcheck.Arbitrary] @quic
 // Type aliases
 
 // Traits
-
