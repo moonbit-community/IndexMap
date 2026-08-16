@@ -776,12 +776,18 @@ struct TestKey {
 } derive(Eq, Debug)
 
 ///|
-impl Hash for TestKey with hash_combine(self, hasher) {
+pub extend TestKey with Eq::{equal, not_equal}
+
+///|
+pub extend TestKey with @debug.Debug::{to_repr}
+
+///|
+impl Hash for TestKey with fn hash_combine(self, hasher) {
   hasher.combine_int(self.value)
 }
 
 ///|
-impl Compare for TestKey with compare(self, other) {
+impl Compare for TestKey with fn compare(self, other) {
   // 只比较value字段，忽略id字段
   if self.value < other.value {
     return -1
