@@ -1,0 +1,15 @@
+name = "kesmeey/IndexMap"
+
+version = "0.1.9"
+
+readme = "README.md"
+
+repository = "https://github.com/moonbit-community/IndexMap"
+
+license = "Apache-2.0"
+
+keywords = [ "data-structure", "map" ]
+
+description = "Implementing the IndexMap Data Structure Using MoonBit"
+
+source = "src"
