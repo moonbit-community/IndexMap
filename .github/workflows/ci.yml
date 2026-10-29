@@ -17,25 +17,41 @@ jobs:
   test:
     runs-on: ubuntu-latest
     name: Setup MoonBit
+    env:
+      CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Setup Moonbit
-        uses: hustcer/setup-moonbit@develop
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- nightly
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
 
       - name: Check Moonbit Version
         run: |
           moon version --all
           moon update
-          moon check --deny-warn
+          moon check --target all --deny-warn
 
       - name: Run tests with coverage
         run: |
-          moon test --enable-coverage
+          moon test --target all --enable-coverage
+          moon test --target all --release
 
-      - name: Generate and upload coverage report
+      - name: Generate coverage report
+        run: moon coverage report -f coveralls -o codecov_report.json
+
+      - name: Preserve coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: codecov_report.json
+
+      - name: Upload coverage when configured
+        if: env.CODECOV_TOKEN != ''
         run: |
+          python3 -m pip install codecov-cli
           moon coverage report \
             -f coveralls \
             -o codecov_report.json \
@@ -43,5 +59,3 @@ jobs:
             --service-job-id "$GITHUB_RUN_ID" \
             --service-pull-request "${{ github.event.pull_request.number }}" \
             --send-to codecov
-        env:
-          CODECOV_TOKEN: 78d973cb-7873-4174-af10-f7a4e1e6a53b

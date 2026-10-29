@@ -14,7 +14,7 @@
 
 ///|
 test "new" {
-  let m : @IndexMap.T[Int, Int] = @IndexMap.new()
+  let m : @IndexMap.T[Int32, Int32] = @IndexMap.new()
   inspect(m.capacity(), content="8")
   @debug.assert_eq(m.size(), 0)
 }
@@ -131,7 +131,7 @@ test "iteri" {
 
 ///|
 test "iter" {
-  let buf = StringBuilder::new(size_hint=20)
+  let buf = StringBuilder(size_hint=20)
   let map = @IndexMap.of([(1, "one"), (2, "two"), (3, "three")])
   map
   .iter()
@@ -153,7 +153,7 @@ test "iter" {
 
 ///|
 test "iter2" {
-  let buf = StringBuilder::new(size_hint=20)
+  let buf = StringBuilder(size_hint=20)
   let map = @IndexMap.of([(1, "one"), (2, "two"), (3, "three")])
   for k, v in map {
     buf.write_string("[\{k}-\{v}]")
@@ -310,13 +310,13 @@ test "from_iter single element iter" {
 
 ///|
 test "from_iter empty iter" {
-  let map : @IndexMap.T[Int, Int] = @IndexMap.from_iter(Iter::empty())
+  let map : @IndexMap.T[Int32, Int32] = @IndexMap.from_iter(Iter::empty())
   inspect(map, content="IndexMap::of([])")
 }
 
 ///|
 test "@IndexMap.contains/empty" {
-  let map : @IndexMap.T[Int, String] = @IndexMap.new()
+  let map : @IndexMap.T[Int32, String] = @IndexMap.new()
   inspect(map.contains(42), content="false")
 }
 
@@ -405,7 +405,7 @@ test "get_at" {
   @debug.debug_inspect(map.get_at(4), content="None")
 
   // 测试空映射
-  let empty_map : @IndexMap.T[String, Int] = @IndexMap.new()
+  let empty_map : @IndexMap.T[String, Int32] = @IndexMap.new()
   @debug.debug_inspect(empty_map.get_at(0), content="None")
 
   // 测试修改元素后的索引访问
@@ -504,29 +504,32 @@ test "sort_by" {
 }
 
 ///|
-test "IndexSet arbitrary" {
-  let samples : Array[@IndexMap.T[Int, Int]] = @quickcheck.samples(20)
-  let sample_arrays_5_10 = []
-  for sample in samples[5:10] {
-    sample_arrays_5_10.push(sample.to_array())
+test "IndexMap arbitrary preserves unique keys and lookup values" {
+  let samples : Array[@IndexMap.T[Int32, Int32]] = @quickcheck.samples(100)
+  assert_eq(samples.length(), 100)
+  let mut nonempty = false
+  for sample in samples {
+    let entries = sample.to_array()
+    assert_eq(sample.size(), entries.length())
+    let seen : Map[Int32, Int32] = Map([])
+    for entry in entries {
+      let (key, value) = entry
+      assert_true(!seen.contains(key))
+      seen[key] = value
+      @debug.assert_eq(sample.get(key), Some(value))
+    }
+    @debug.assert_eq(@IndexMap.from_iter(entries.iter()).to_array(), entries)
+    if entries.length() > 0 {
+      nonempty = true
+    }
   }
-  @debug.assert_eq(sample_arrays_5_10, [[], [], [(0, 0)], [(0, 0)], [(0, 0)]])
-  let sample_arrays_11_15 = []
-  for sample in samples[11:15] {
-    sample_arrays_11_15.push(sample.to_array())
-  }
-  @debug.assert_eq(sample_arrays_11_15, [
-    [(0, 0), (-1, 1), (2, 0), (-3, -2)],
-    [(0, 0)],
-    [(0, -1), (-2, 5), (7, -7), (-8, 1), (3, 6)],
-    [(0, 0)],
-  ])
+  assert_true(nonempty)
 }
 
 ///|
 /// 测试键值更新功能
 test "update_existing_key" {
-  let map : T[String, Int] = @IndexMap.new()
+  let map : @IndexMap.T[String, Int32] = @IndexMap.new()
 
   // 首次插入键值对
   map.set("key1", 100)
@@ -541,7 +544,7 @@ test "update_existing_key" {
 ///|
 /// 测试首次插入元素更新头节点
 test "first_element_head_update" {
-  let map : T[String, Int] = @IndexMap.new()
+  let map : @IndexMap.T[String, Int32] = @IndexMap.new()
 
   // 确认初始状态
   @debug.assert_eq(map.size(), 0)
@@ -561,7 +564,7 @@ test "first_element_head_update" {
 ///|
 /// 测试get_or_init函数
 test "get_or_init_function" {
-  let map : T[String, Int] = @IndexMap.new()
+  let map : @IndexMap.T[String, Int32] = @IndexMap.new()
 
   // 记录init函数调用次数
   let mut init_calls = 0
@@ -588,7 +591,7 @@ test "get_or_init_function" {
 ///|
 /// 测试空映射上的remove操作
 test "remove_on_empty_map" {
-  let map : T[String, Int] = @IndexMap.new()
+  let map : @IndexMap.T[String, Int32] = @IndexMap.new()
 
   // 确认映射为空
   @debug.assert_eq(map.size(), 0)
@@ -604,7 +607,7 @@ test "remove_on_empty_map" {
 /// 测试触发扩容
 test "capacity_growth" {
   // 创建一个较小容量的映射
-  let map : T[Int, String] = @IndexMap.new(capacity=4)
+  let map : @IndexMap.T[Int32, String] = @IndexMap.new(capacity=4)
 
   // 记录初始容量
   let initial_capacity = map.capacity()
@@ -638,7 +641,7 @@ test "capacity_growth" {
 ///|
 /// 测试尾节点的后继更新
 test "tail_next_pointer_update" {
-  let map : T[String, Int] = @IndexMap.new()
+  let map : @IndexMap.T[String, Int32] = @IndexMap.new()
 
   // 添加第一个元素
   map.set("first", 1)
@@ -664,7 +667,7 @@ test "tail_next_pointer_update" {
 
 ///|
 test "0 size" {
-  let map : T[String, Int] = @IndexMap.new()
+  let map : @IndexMap.T[String, Int32] = @IndexMap.new()
   @debug.assert_eq(map.values(), [])
   @debug.assert_eq(map.keys(), [])
   @debug.assert_eq(map.to_array(), [])
@@ -771,17 +774,17 @@ test "reverse_with_small_size" {
 ///|
 // 创建自定义键类型
 struct TestKey {
-  id : Int
-  value : Int
+  id : Int32
+  value : Int32
 } derive(Eq, Debug)
 
 ///|
-impl Hash for TestKey with hash_combine(self, hasher) {
+impl Hash for TestKey with fn hash_combine(self, hasher) {
   hasher.combine_int(self.value)
 }
 
 ///|
-impl Compare for TestKey with compare(self, other) {
+impl Compare for TestKey with fn compare(self, other) {
   // 只比较value字段，忽略id字段
   if self.value < other.value {
     return -1
@@ -798,9 +801,9 @@ test "sort_with_equal_keys" {
 
   // 创建带有相等value但不同id的键的映射
   let map = @IndexMap.new()
-  map.set(TestKey::{ id: 1, value: 10 }, "A")
-  map.set(TestKey::{ id: 2, value: 20 }, "B")
-  map.set(TestKey::{ id: 3, value: 10 }, "C") // 与第一个键的value相同
+  map.set(TestKey::{ id: 1, value: 10, }, "A")
+  map.set(TestKey::{ id: 2, value: 20, }, "B")
+  map.set(TestKey::{ id: 3, value: 10, }, "C") // 与第一个键的value相同
 
   // 执行排序并验证结果
   map.sort()
@@ -1031,7 +1034,7 @@ test "tail_next_pointer_complete_update" {
 /// 测试容量为0情况下的自动扩容
 test "growth_from_zero_capacity" {
   // 创建特殊情况：容量为0的映射
-  let map : @IndexMap.T[String, Int] = @IndexMap.new(capacity=0)
+  let map : @IndexMap.T[String, Int32] = @IndexMap.new(capacity=0)
 
   // 验证初始容量
   @debug.assert_eq(map.capacity(), 0)
@@ -1106,10 +1109,10 @@ test "shift_with_missing_position_mapping" {
 test "sorted_with_equal_keys" {
   // 使用之前定义的TestKey，其compare方法只比较value字段
   // 创建几个键值相同但ID不同的TestKey
-  let key1 = TestKey::{ id: 1, value: 10 }
-  let key2 = TestKey::{ id: 2, value: 10 } // 与key1相等(根据compare方法)
-  let key3 = TestKey::{ id: 3, value: 20 }
-  let key4 = TestKey::{ id: 4, value: 10 } // 与key1、key2相等
+  let key1 = TestKey::{ id: 1, value: 10, }
+  let key2 = TestKey::{ id: 2, value: 10, } // 与key1相等(根据compare方法)
+  let key3 = TestKey::{ id: 3, value: 20, }
+  let key4 = TestKey::{ id: 4, value: 10, } // 与key1、key2相等
 
   // 创建映射并添加元素（以不同的顺序添加）
   let map = @IndexMap.new()

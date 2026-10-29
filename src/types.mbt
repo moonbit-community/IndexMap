@@ -15,22 +15,22 @@
 ///|
 /// 桶结构，包含键值对信息和链表指针
 priv struct Bucket[K, V] {
-  hash : Int // 键的哈希值（缓存以避免重复计算）
+  hash : Int32 // 键的哈希值（缓存以避免重复计算）
   key : K // 键
   mut value : V // 值
-  mut next : Int // 链表后继索引，-1表示没有后继
-  mut prev : Int // 链表前驱索引，-1表示没有前驱
+  mut next : Int32 // 链表后继索引，-1表示没有后继
+  mut prev : Int32 // 链表前驱索引，-1表示没有前驱
 }
 
 ///|
 /// IndexMap核心结构，包含所有数据组织功能
 priv struct IndexMapCore[K, V] {
-  mut hash_to_idx : @hashmap.HashMap[Int, Int] // 哈希值到桶索引的映射
+  mut hash_to_idx : @hashmap.HashMap[Int32, Int32] // 哈希值到桶索引的映射
   mut entries : Array[Bucket[K, V]] // 数组：存储实际的键值对及其链表信息
-  mut head : Int // 链表头节点索引，-1表示空链表
-  mut tail : Int // 链表尾节点索引，-1表示空链表
-  mut position_to_idx : Array[Int] // 位置到桶索引的映射，支持O(1)的索引访问
-  mut idx_to_position : @hashmap.HashMap[Int, Int] // 桶索引到位置的映射，使index_of操作为O(1)
+  mut head : Int32 // 链表头节点索引，-1表示空链表
+  mut tail : Int32 // 链表尾节点索引，-1表示空链表
+  mut position_to_idx : Array[Int32] // 位置到桶索引的映射，支持O(1)的索引访问
+  mut idx_to_position : @hashmap.HashMap[Int32, Int32] // 桶索引到位置的映射，使index_of操作为O(1)
 }
 
 /// A mutable indexed hash map.
@@ -53,8 +53,8 @@ priv struct IndexMapCore[K, V] {
 /// assert_eq(map.get_at(0), (3, "updated"))  // Access by insertion order
 struct T[K, V] {
   core : IndexMapCore[K, V] // 包含核心数据结构
-  mut size : Int // 元素数量
-  mut capacity : Int // 当前哈希表容量
-  mut growAt : Int // 扩容阈值
-  mut key_to_idx : @hashmap.HashMap[K, Int] // 键到索引的直接映射，用于O(1)查找
+  mut size : Int32 // 元素数量
+  mut capacity : Int32 // 当前哈希表容量
+  mut growAt : Int32 // 扩容阈值
+  mut key_to_idx : @hashmap.HashMap[K, Int32] // 键到索引的直接映射，用于O(1)查找
 }

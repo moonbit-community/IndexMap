@@ -2,7 +2,7 @@
 const Default_init_capacity = 8
 
 ///|
-fn calc_grow_threshold(capacity : Int) -> Int {
+fn calc_grow_threshold(capacity : Int32) -> Int32 {
   capacity * 3 / 4 // 75% 负载因子
 }
 
@@ -24,7 +24,7 @@ fn calc_grow_threshold(capacity : Int) -> Int {
 /// let map : @IndexMap.T[String, Int] = @IndexMap.new(capacity=16)
 /// inspect(map.capacity(), content="16")
 /// inspect(map.is_empty(), content="true")
-pub fn[K, V] new(capacity? : Int = Default_init_capacity) -> T[K, V] {
+pub fn[K, V] new(capacity~ : Int32 = Default_init_capacity) -> T[K, V] {
   {
     core: {
       hash_to_idx: @hashmap.HashMap([], capacity~),
@@ -37,7 +37,7 @@ pub fn[K, V] new(capacity? : Int = Default_init_capacity) -> T[K, V] {
     size: 0,
     capacity,
     growAt: calc_grow_threshold(capacity),
-    key_to_idx: @hashmap.HashMap::default(),
+    key_to_idx: Default::default(),
   }
 }
 
@@ -94,9 +94,10 @@ pub fn[K : Hash + Eq, V] from_array(arr : Array[(K, V)]) -> T[K, V] {
 
 ///|
 /// Sets a key-value pair into the map. If the key already exists, updates its value.
+#alias("_[_]=_")
 pub fn[K : Hash + Eq, V] T::set(self : T[K, V], key : K, value : V) -> Unit {
   // 计算哈希值
-  let hash = key.hash()
+  let hash = Hash::hash(key)
 
   // 检查键是否已存在
   if self.key_to_idx.contains(key) {
@@ -160,7 +161,7 @@ pub fn[K : Hash + Eq, V] T::set_with_hash(
   self : T[K, V],
   key : K,
   value : V,
-  hash : Int,
+  hash : Int32,
 ) -> Unit {
   // 检查键是否已存在
   if self.key_to_idx.contains(key) {
@@ -216,28 +217,6 @@ pub fn[K : Hash + Eq, V] T::set_with_hash(
 }
 
 ///|
-/// Sets the value associated with a key in the hash map. If the key already
-/// exists, updates its value; otherwise, adds a new key-value pair. This
-/// function is automatically called when using the index assignment syntax
-/// `map[key] = value`.
-///
-/// Parameters:
-///
-/// * `map` : The hash map to modify.
-/// * `key` : The key to associate with the value. Must implement `Hash` and `Eq`
-/// traits.
-/// * `value` : The value to associate with the key.
-///
-/// Example:
-///
-/// let map : @IndexMap.T[String, Int] = @IndexMap.new()
-/// map["key"] = 42
-/// inspect(map.get("key"), content="Some(42)")
-pub fn[K : Hash + Eq, V] T::op_set(self : T[K, V], key : K, value : V) -> Unit {
-  self.set(key, value)
-}
-
-///|
 /// Retrieves the value associated with a given key in the hash map.
 ///
 /// Parameters:
@@ -252,6 +231,7 @@ pub fn[K : Hash + Eq, V] T::op_set(self : T[K, V], key : K, value : V) -> Unit {
 /// let map = @IndexMap.of([("key", 42)])
 /// inspect(map.get("key"), content="Some(42)")
 /// inspect(map.get("nonexistent"), content="None")
+#alias("_[_]")
 pub fn[K : Hash + Eq, V] T::get(self : T[K, V], key : K) -> V? {
   // 直接从键到索引的映射中查找
   match self.key_to_idx.get(key) {
@@ -262,7 +242,7 @@ pub fn[K : Hash + Eq, V] T::get(self : T[K, V], key : K) -> V? {
 
 ///|
 /// Gets the key-value pair at the given index position.
-pub fn[K, V] T::get_at(self : T[K, V], index : Int) -> (K, V)? {
+pub fn[K, V] T::get_at(self : T[K, V], index : Int32) -> (K, V)? {
   if index < 0 || index >= self.size {
     return None
   }
@@ -278,7 +258,7 @@ pub fn[K, V] T::get_at(self : T[K, V], index : Int) -> (K, V)? {
 }
 
 ///|
-fn[K : Eq, V] T::get_with_hash(self : T[K, V], key : K, hash : Int) -> V? {
+fn[K : Eq, V] T::get_with_hash(self : T[K, V], key : K, hash : Int32) -> V? {
   // 首先检查哈希值是否在 hash_to_idx 中
   match self.core.hash_to_idx.get(hash) {
     Some(idx) => {
@@ -293,28 +273,6 @@ fn[K : Eq, V] T::get_with_hash(self : T[K, V], key : K, hash : Int) -> V? {
     }
     None => None
   }
-}
-
-///|
-/// Retrieves a value from the hash map using the index operator syntax. This
-/// method is automatically called when using the square bracket notation
-/// `map[key]`.
-///
-/// Parameters:
-///
-/// * `map` : The hash map to retrieve the value from.
-/// * `key` : The key to look up in the map. Must implement both `Hash` and `Eq`
-/// traits.
-///
-/// Returns `Some(value)` if the key exists in the map, `None` otherwise.
-///
-/// Example:
-///
-/// let map = @IndexMap.of([("key", 42)])
-/// inspect(map["key"], content="Some(42)")
-/// inspect(map["nonexistent"], content="None")
-pub fn[K : Hash + Eq, V] T::op_get(self : T[K, V], key : K) -> V? {
-  self.get(key)
 }
 
 ///|
@@ -343,7 +301,7 @@ pub fn[K : Hash + Eq, V] T::get_or_init(
   key : K,
   init : () -> V,
 ) -> V {
-  let hash = key.hash()
+  let hash = Hash::hash(key)
   match self.get_with_hash(key, hash) {
     Some(v) => v
     None => {
@@ -545,7 +503,7 @@ test "of" {
 pub impl[K : @quickcheck.Arbitrary + Hash + Eq, V : @quickcheck.Arbitrary] @quickcheck.Arbitrary for T[
   K,
   V,
-] with arbitrary(size, rs) {
+] with fn arbitrary(size, rs) {
   let m = new()
   (@quickcheck.Arbitrary::arbitrary(size, rs) : Iter[(K, V)]).each(fn(kv) {
     let (k, v) = kv
@@ -558,17 +516,17 @@ pub impl[K : @quickcheck.Arbitrary + Hash + Eq, V : @quickcheck.Arbitrary] @quic
 priv struct MyString(String) derive(Eq)
 
 ///|
-impl Hash for MyString with hash(self) {
+impl Hash for MyString with fn hash(self) {
   self.0.length()
 }
 
 ///|
-impl Hash for MyString with hash_combine(self, hasher) {
+impl Hash for MyString with fn hash_combine(self, hasher) {
   hasher.combine_string(self.0)
 }
 
 ///|
-impl Show for MyString with output(self, logger) {
+impl Show for MyString with fn output(self, logger) {
   logger.write_string(self.0)
 }
 
@@ -620,7 +578,7 @@ test "arbitrary" {
 
 ///|
 test "set" {
-  let m : T[MyString, Int] = new()
+  let m : T[MyString, Int32] = new()
   m.set("a", 1)
   m.set("b", 1)
   m.set("bc", 2)
@@ -637,7 +595,7 @@ test "set" {
 
 ///|
 test "remove" {
-  let m : T[MyString, Int] = new()
+  let m : T[MyString, Int32] = new()
   m.set("a", 1)
   m.set("ab", 2)
   m.set("bc", 2)
@@ -654,7 +612,7 @@ test "remove" {
 
 ///|
 test "remove_unexist_key" {
-  let m : T[MyString, Int] = new()
+  let m : T[MyString, Int32] = new()
   m.set("a", 1)
   m.set("ab", 2)
   m.set("abc", 3)
@@ -665,7 +623,7 @@ test "remove_unexist_key" {
 
 ///|
 test "clear" {
-  let m : T[MyString, Int] = of([("a", 1), ("b", 2), ("c", 3)])
+  let m : T[MyString, Int32] = of([("a", 1), ("b", 2), ("c", 3)])
   println(m.capacity())
   let old_capacity = m.capacity()
   m.clear()
@@ -688,7 +646,7 @@ test "clear" {
 
 ///|
 test "grow" {
-  let m : T[MyString, Int] = new()
+  let m : T[MyString, Int32] = new()
   m.set("C", 1)
   m.set("Go", 2)
   m.set("C++", 3)
@@ -707,12 +665,12 @@ test "grow" {
 
 ///|
 /// Returns the number of key-value pairs in the map.
-pub fn[K, V] T::size(self : T[K, V]) -> Int {
+pub fn[K, V] T::size(self : T[K, V]) -> Int32 {
   self.size
 }
 
 ///|
-pub fn[K, V] T::capacity(self : T[K, V]) -> Int {
+pub fn[K, V] T::capacity(self : T[K, V]) -> Int32 {
   self.capacity
 }
 
@@ -738,7 +696,7 @@ pub fn[K, V] T::clear(self : T[K, V]) -> Unit {
   self.core.position_to_idx = []
   self.core.idx_to_position = @hashmap.HashMap([], capacity=self.capacity) // 清空索引到位置的映射
   self.size = 0
-  self.key_to_idx = @hashmap.HashMap::default()
+  self.key_to_idx = Default::default()
 }
 
 ///|
@@ -974,7 +932,7 @@ pub fn[K, V] T::each(self : T[K, V], f : (K, V) -> Unit) -> Unit {
 /// map.eachi(fn(i, k, _) { if k == "b" { result = i } })
 /// // "b" is at index 1
 /// inspect(result, content="1")
-pub fn[K, V] T::eachi(self : T[K, V], f : (Int, K, V) -> Unit) -> Unit {
+pub fn[K, V] T::eachi(self : T[K, V], f : (Int32, K, V) -> Unit) -> Unit {
   let mut current = self.core.head
   let mut idx = 0
   while current != -1 {
@@ -999,7 +957,7 @@ pub fn[K, V] T::eachi(self : T[K, V], f : (Int, K, V) -> Unit) -> Unit {
 /// inspect(map, content=
 /// #|IndexMap::of([(1, "one"), (2, "two")])
 /// )
-pub impl[K : Show, V : Show] Show for T[K, V] with output(self, logger) {
+pub impl[K : Show, V : Show] Show for T[K, V] with fn output(self, logger) {
   logger.write_string("IndexMap::of([")
   self.eachi(fn(i, k, v) {
     if i > 0 {
@@ -1032,7 +990,7 @@ pub impl[K : Show, V : Show] Show for T[K, V] with output(self, logger) {
 /// inspect(map.index_of("a"), content="Some(0)")
 /// inspect(map.index_of("b"), content="Some(1)")
 /// inspect(map.index_of("d"), content="None")
-pub fn[K : Hash + Eq, V] T::index_of(self : T[K, V], key : K) -> Int? {
+pub fn[K : Hash + Eq, V] T::index_of(self : T[K, V], key : K) -> Int32? {
   // 先检查键是否存在
   match self.key_to_idx.get(key) {
     Some(bucket_idx) =>
@@ -1175,7 +1133,7 @@ pub fn[K : Show, V : ToJson] T::to_json_string(self : T[K, V]) -> String {
 
 ///|
 /// Standard ToJson implementation (may not preserve order)
-pub impl[K : Show, V : ToJson] ToJson for T[K, V] with to_json(self) {
+pub impl[K : Show, V : ToJson] ToJson for T[K, V] with fn to_json(self) {
   // 使用普通Map
   let object = Map([], capacity=self.size)
 
@@ -1357,7 +1315,10 @@ pub fn[K, V] T::get_last(self : T[K, V]) -> (K, V)? {
 }
 
 ///|
-pub fn[K, V] T::sort_by(self : T[K, V], compare : (K, V, K, V) -> Int) -> Unit {
+pub fn[K, V] T::sort_by(
+  self : T[K, V],
+  compare : (K, V, K, V) -> Int32,
+) -> Unit {
   if self.size <= 1 {
     return // 不需要排序
   }
@@ -1407,12 +1368,15 @@ pub fn[K, V] T::sort_by(self : T[K, V], compare : (K, V, K, V) -> Int) -> Unit {
 }
 
 ///|
-pub fn[K, V] T::sort_by_key(self : T[K, V], compare : (K, K) -> Int) -> Unit {
+pub fn[K, V] T::sort_by_key(self : T[K, V], compare : (K, K) -> Int32) -> Unit {
   self.sort_by(fn(k1, _, k2, _) { compare(k1, k2) })
 }
 
 ///|
-pub fn[K, V] T::sort_by_value(self : T[K, V], compare : (V, V) -> Int) -> Unit {
+pub fn[K, V] T::sort_by_value(
+  self : T[K, V],
+  compare : (V, V) -> Int32,
+) -> Unit {
   self.sort_by(fn(_, v1, _, v2) { compare(v1, v2) })
 }
 
@@ -1470,7 +1434,7 @@ pub fn[K, V] T::reverse(self : T[K, V]) -> Unit {
 ///|
 pub fn[K : Hash + Eq, V] T::sorted_by(
   self : T[K, V],
-  compare : (K, V, K, V) -> Int,
+  compare : (K, V, K, V) -> Int32,
 ) -> T[K, V] {
   // 创建新映射
   let result = new(capacity=self.size)
@@ -1497,7 +1461,7 @@ pub fn[K : Hash + Eq, V] T::sorted_by(
 ///|
 pub fn[K : Hash + Eq, V] T::sorted_by_key(
   self : T[K, V],
-  compare : (K, K) -> Int,
+  compare : (K, K) -> Int32,
 ) -> T[K, V] {
   self.sorted_by(fn(k1, _, k2, _) { compare(k1, k2) })
 }
@@ -1505,7 +1469,7 @@ pub fn[K : Hash + Eq, V] T::sorted_by_key(
 ///|
 pub fn[K : Hash + Eq, V] T::sorted_by_value(
   self : T[K, V],
-  compare : (V, V) -> Int,
+  compare : (V, V) -> Int32,
 ) -> T[K, V] {
   self.sorted_by(fn(_, v1, _, v2) { compare(v1, v2) })
 }
